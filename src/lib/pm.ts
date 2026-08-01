@@ -6,6 +6,9 @@ export type WbsItem = Tables<"wbs_items">;
 export type Activity = Tables<"activities">;
 export type Milestone = Tables<"milestones">;
 export type Sprint = Tables<"sprints">;
+export type UserStory = Tables<"user_stories">;
+export type StoryTask = Tables<"story_tasks">;
+export type UserStoryNode = UserStory & { tasks: StoryTask[] };
 
 export const STATUS_OPTIONS = [
   { value: "not_started", label: "Not started" },
@@ -84,6 +87,27 @@ export async function fetchProject(projectId: string) {
   const { data, error } = await supabase.from("projects").select("*").eq("id", projectId).maybeSingle();
   if (error) throw error;
   return data;
+}
+
+export async function fetchSprintBacklog(sprintId: string): Promise<UserStoryNode[]> {
+  const { data: stories, error } = await supabase
+    .from("user_stories")
+    .select("*")
+    .eq("sprint_id", sprintId)
+    .order("sort_order")
+    .order("story_code");
+  if (error) throw error;
+  if (!stories.length) return [];
+
+  const { data: tasks, error: taskError } = await supabase
+    .from("story_tasks")
+    .select("*")
+    .in("user_story_id", stories.map((s) => s.id))
+    .order("sort_order")
+    .order("created_at");
+  if (taskError) throw taskError;
+
+  return stories.map((s) => ({ ...s, tasks: tasks.filter((t) => t.user_story_id === s.id) }));
 }
 
 export async function fetchHierarchy(projectId: string): Promise<WbsNode[]> {
