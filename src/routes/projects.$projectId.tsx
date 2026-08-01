@@ -278,6 +278,59 @@ function ProjectDetail() {
         </div>
       </header>
 
+      <section className="mt-8">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Rocket className="size-4 text-primary" />
+            <h2 className="text-xl font-semibold tracking-tight">Sprint planning</h2>
+          </div>
+          <RecordDialog
+            title="New sprint"
+            description="Plan a sprint with its goal, features, deliverables and dates."
+            fields={sprintFields}
+            submitLabel="Add sprint"
+            onSubmit={(values) => addSprint.mutateAsync(values)}
+            trigger={
+              <Button variant="outline" size="sm">
+                <Plus className="size-4" /> Add sprint
+              </Button>
+            }
+          />
+        </div>
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          {sprints.isLoading ? (
+            <p className="text-sm text-muted-foreground">Loading sprints…</p>
+          ) : (sprints.data ?? []).length === 0 ? (
+            <div className="rounded-lg border border-dashed border-border p-8 text-center lg:col-span-2">
+              <p className="text-sm text-muted-foreground">
+                No sprints yet. Add one to plan features and deliverables over a date window.
+              </p>
+            </div>
+          ) : (
+            (sprints.data ?? []).map((sprint) => (
+              <article key={sprint.id} className="rounded-lg border border-border bg-card p-5">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-lg font-semibold">{sprint.name}</h3>
+                    {sprint.goal ? <p className="mt-1 text-sm text-muted-foreground">{sprint.goal}</p> : null}
+                  </div>
+                  <Badge variant="secondary">{statusLabel(sprint.status)}</Badge>
+                </div>
+                <div className="mt-4 grid gap-4 border-t border-border pt-3 sm:grid-cols-2">
+                  <DateSpan label="Sprint dates" start={sprint.start_date} end={sprint.end_date} />
+                  <div className="text-xs">
+                    <span className="uppercase tracking-wide text-muted-foreground">Owner</span>
+                    <p className="mt-0.5 font-medium">{sprint.owner || "—"}</p>
+                  </div>
+                  <LineList label="Features" value={sprint.features} />
+                  <LineList label="Deliverables" value={sprint.deliverables} />
+                </div>
+              </article>
+            ))
+          )}
+        </div>
+      </section>
+
       <section className="mt-8 space-y-4">
         {hierarchy.isLoading ? (
           <p className="py-12 text-center text-sm text-muted-foreground">Loading breakdown…</p>
