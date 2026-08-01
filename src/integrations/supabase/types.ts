@@ -197,6 +197,69 @@ export type Database = {
         }
         Relationships: []
       }
+      sprints: {
+        Row: {
+          created_at: string
+          deliverables: string | null
+          end_date: string | null
+          features: string | null
+          goal: string | null
+          id: string
+          name: string
+          owner: string | null
+          project_id: string
+          sort_order: number
+          start_date: string | null
+          status: Database["public"]["Enums"]["work_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deliverables?: string | null
+          end_date?: string | null
+          features?: string | null
+          goal?: string | null
+          id?: string
+          name: string
+          owner?: string | null
+          project_id: string
+          sort_order?: number
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["work_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deliverables?: string | null
+          end_date?: string | null
+          features?: string | null
+          goal?: string | null
+          id?: string
+          name?: string
+          owner?: string | null
+          project_id?: string
+          sort_order?: number
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["work_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sprints_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_rollup"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "sprints_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wbs_items: {
         Row: {
           budget: number
