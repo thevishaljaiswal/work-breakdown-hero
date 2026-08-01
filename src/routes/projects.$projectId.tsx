@@ -95,6 +95,51 @@ function DateSpan({ label, start, end }: { label: string; start: string | null; 
   );
 }
 
+const sprintFields: FieldSpec[] = [
+  { name: "name", label: "Sprint name", type: "text", required: true, placeholder: "Sprint 1", span: "half" },
+  { name: "owner", label: "Owner", type: "text", span: "half" },
+  { name: "goal", label: "Sprint goal", type: "textarea", placeholder: "What this sprint should achieve" },
+  { name: "features", label: "Features", type: "textarea", placeholder: "One feature per line" },
+  { name: "deliverables", label: "Deliverables", type: "textarea", placeholder: "One deliverable per line" },
+  { name: "status", label: "Status", type: "select", options: STATUS_OPTIONS, defaultValue: "not_started", span: "half" },
+  { name: "start_date", label: "Start date", type: "date", required: true, span: "half" },
+  { name: "end_date", label: "End date", type: "date", required: true, span: "half" },
+];
+
+function LineList({ label, value }: { label: string; value: string | null }) {
+  const items = (value ?? "")
+    .split("\n")
+    .map((line) => line.replace(/^[-*•]\s*/, "").trim())
+    .filter(Boolean);
+  return (
+    <div className="text-xs">
+      <span className="uppercase tracking-wide text-muted-foreground">{label}</span>
+      {items.length === 0 ? (
+        <p className="mt-0.5 text-muted-foreground">—</p>
+      ) : (
+        <ul className="mt-1 space-y-1">
+          {items.map((item, index) => (
+            <li key={`${label}-${index}`} className="text-sm">
+              • {item}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function DateSpanUnused({ label, start, end }: { label: string; start: string | null; end: string | null }) {
+  return (
+    <div className="text-xs">
+      <span className="uppercase tracking-wide text-muted-foreground">{label}</span>
+      <p className="mt-0.5 font-medium">
+        {formatDate(start)} → {formatDate(end)}
+      </p>
+    </div>
+  );
+}
+
 function ProjectDetail() {
   const { projectId } = Route.useParams();
   const queryClient = useQueryClient();
