@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft, Flag, ListTree, Plus, Layers } from "lucide-react";
+import { ChevronLeft, Flag, ListTree, Plus, Layers, Rocket } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,7 @@ import {
   activitySpan,
   fetchHierarchy,
   fetchProject,
+  fetchSprints,
   formatDate,
   projectSpan,
   statusLabel,
