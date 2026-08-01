@@ -135,6 +135,7 @@ function ProjectDetail() {
 
   const project = useQuery({ queryKey: ["project", projectId], queryFn: () => fetchProject(projectId) });
   const hierarchy = useQuery({ queryKey: ["hierarchy", projectId], queryFn: () => fetchHierarchy(projectId) });
+  const sprints = useQuery({ queryKey: ["sprints", projectId], queryFn: () => fetchSprints(projectId) });
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ["hierarchy", projectId] });
@@ -206,6 +207,28 @@ function ProjectDetail() {
     onSuccess: () => {
       toast.success("Milestone added");
       refresh();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const addSprint = useMutation({
+    mutationFn: async (values: Record<string, string>) => {
+      const { error } = await supabase.from("sprints").insert({
+        project_id: projectId,
+        name: values.name,
+        goal: values.goal || null,
+        features: values.features || null,
+        deliverables: values.deliverables || null,
+        owner: values.owner || null,
+        status: (values.status || "not_started") as never,
+        start_date: values.start_date || null,
+        end_date: values.end_date || null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Sprint added");
+      queryClient.invalidateQueries({ queryKey: ["sprints", projectId] });
     },
     onError: (error: Error) => toast.error(error.message),
   });
