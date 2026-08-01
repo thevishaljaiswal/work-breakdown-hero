@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RecordDialog, type FieldSpec } from "@/components/pm/RecordDialog";
+import { SprintBacklog } from "@/components/pm/SprintBacklog";
 import {
   STATUS_OPTIONS,
   activitySpan,
@@ -297,11 +298,11 @@ function ProjectDetail() {
             }
           />
         </div>
-        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <div className="mt-4 grid gap-4">
           {sprints.isLoading ? (
             <p className="text-sm text-muted-foreground">Loading sprints…</p>
           ) : (sprints.data ?? []).length === 0 ? (
-            <div className="rounded-lg border border-dashed border-border p-8 text-center lg:col-span-2">
+            <div className="rounded-lg border border-dashed border-border p-8 text-center">
               <p className="text-sm text-muted-foreground">
                 No sprints yet. Add one to plan features and deliverables over a date window.
               </p>
@@ -325,6 +326,7 @@ function ProjectDetail() {
                   <LineList label="Features" value={sprint.features} />
                   <LineList label="Deliverables" value={sprint.deliverables} />
                 </div>
+                <SprintBacklog sprintId={sprint.id} />
               </article>
             ))
           )}
