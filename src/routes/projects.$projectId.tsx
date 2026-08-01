@@ -129,17 +129,6 @@ function LineList({ label, value }: { label: string; value: string | null }) {
   );
 }
 
-function DateSpanUnused({ label, start, end }: { label: string; start: string | null; end: string | null }) {
-  return (
-    <div className="text-xs">
-      <span className="uppercase tracking-wide text-muted-foreground">{label}</span>
-      <p className="mt-0.5 font-medium">
-        {formatDate(start)} → {formatDate(end)}
-      </p>
-    </div>
-  );
-}
-
 function ProjectDetail() {
   const { projectId } = Route.useParams();
   const queryClient = useQueryClient();
