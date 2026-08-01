@@ -5,6 +5,7 @@ export type Project = Tables<"projects">;
 export type WbsItem = Tables<"wbs_items">;
 export type Activity = Tables<"activities">;
 export type Milestone = Tables<"milestones">;
+export type Sprint = Tables<"sprints">;
 
 export const STATUS_OPTIONS = [
   { value: "not_started", label: "Not started" },
@@ -64,6 +65,17 @@ export async function fetchProjects() {
 
 export async function fetchProjectRollups() {
   const { data, error } = await supabase.from("project_rollup").select("*");
+  if (error) throw error;
+  return data;
+}
+
+export async function fetchSprints(projectId: string) {
+  const { data, error } = await supabase
+    .from("sprints")
+    .select("*")
+    .eq("project_id", projectId)
+    .order("sort_order")
+    .order("start_date", { nullsFirst: false });
   if (error) throw error;
   return data;
 }

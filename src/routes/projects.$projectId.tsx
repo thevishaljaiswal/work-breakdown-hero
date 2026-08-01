@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft, Flag, ListTree, Plus, Layers } from "lucide-react";
+import { ChevronLeft, Flag, ListTree, Plus, Layers, Rocket } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,7 @@ import {
   activitySpan,
   fetchHierarchy,
   fetchProject,
+  fetchSprints,
   formatDate,
   projectSpan,
   statusLabel,
@@ -94,12 +95,47 @@ function DateSpan({ label, start, end }: { label: string; start: string | null; 
   );
 }
 
+const sprintFields: FieldSpec[] = [
+  { name: "name", label: "Sprint name", type: "text", required: true, placeholder: "Sprint 1", span: "half" },
+  { name: "owner", label: "Owner", type: "text", span: "half" },
+  { name: "goal", label: "Sprint goal", type: "textarea", placeholder: "What this sprint should achieve" },
+  { name: "features", label: "Features", type: "textarea", placeholder: "One feature per line" },
+  { name: "deliverables", label: "Deliverables", type: "textarea", placeholder: "One deliverable per line" },
+  { name: "status", label: "Status", type: "select", options: STATUS_OPTIONS, defaultValue: "not_started", span: "half" },
+  { name: "start_date", label: "Start date", type: "date", required: true, span: "half" },
+  { name: "end_date", label: "End date", type: "date", required: true, span: "half" },
+];
+
+function LineList({ label, value }: { label: string; value: string | null }) {
+  const items = (value ?? "")
+    .split("\n")
+    .map((line) => line.replace(/^[-*•]\s*/, "").trim())
+    .filter(Boolean);
+  return (
+    <div className="text-xs">
+      <span className="uppercase tracking-wide text-muted-foreground">{label}</span>
+      {items.length === 0 ? (
+        <p className="mt-0.5 text-muted-foreground">—</p>
+      ) : (
+        <ul className="mt-1 space-y-1">
+          {items.map((item, index) => (
+            <li key={`${label}-${index}`} className="text-sm">
+              • {item}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function ProjectDetail() {
   const { projectId } = Route.useParams();
   const queryClient = useQueryClient();
 
   const project = useQuery({ queryKey: ["project", projectId], queryFn: () => fetchProject(projectId) });
   const hierarchy = useQuery({ queryKey: ["hierarchy", projectId], queryFn: () => fetchHierarchy(projectId) });
+  const sprints = useQuery({ queryKey: ["sprints", projectId], queryFn: () => fetchSprints(projectId) });
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ["hierarchy", projectId] });
@@ -175,6 +211,28 @@ function ProjectDetail() {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const addSprint = useMutation({
+    mutationFn: async (values: Record<string, string>) => {
+      const { error } = await supabase.from("sprints").insert({
+        project_id: projectId,
+        name: values.name,
+        goal: values.goal || null,
+        features: values.features || null,
+        deliverables: values.deliverables || null,
+        owner: values.owner || null,
+        status: (values.status || "not_started") as never,
+        start_date: values.start_date || null,
+        end_date: values.end_date || null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Sprint added");
+      queryClient.invalidateQueries({ queryKey: ["sprints", projectId] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   const wbsList = hierarchy.data ?? [];
   const rolled = projectSpan(project.data ?? null, wbsList);
 
@@ -219,6 +277,59 @@ function ProjectDetail() {
           </div>
         </div>
       </header>
+
+      <section className="mt-8">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Rocket className="size-4 text-primary" />
+            <h2 className="text-xl font-semibold tracking-tight">Sprint planning</h2>
+          </div>
+          <RecordDialog
+            title="New sprint"
+            description="Plan a sprint with its goal, features, deliverables and dates."
+            fields={sprintFields}
+            submitLabel="Add sprint"
+            onSubmit={(values) => addSprint.mutateAsync(values)}
+            trigger={
+              <Button variant="outline" size="sm">
+                <Plus className="size-4" /> Add sprint
+              </Button>
+            }
+          />
+        </div>
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          {sprints.isLoading ? (
+            <p className="text-sm text-muted-foreground">Loading sprints…</p>
+          ) : (sprints.data ?? []).length === 0 ? (
+            <div className="rounded-lg border border-dashed border-border p-8 text-center lg:col-span-2">
+              <p className="text-sm text-muted-foreground">
+                No sprints yet. Add one to plan features and deliverables over a date window.
+              </p>
+            </div>
+          ) : (
+            (sprints.data ?? []).map((sprint) => (
+              <article key={sprint.id} className="rounded-lg border border-border bg-card p-5">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-lg font-semibold">{sprint.name}</h3>
+                    {sprint.goal ? <p className="mt-1 text-sm text-muted-foreground">{sprint.goal}</p> : null}
+                  </div>
+                  <Badge variant="secondary">{statusLabel(sprint.status)}</Badge>
+                </div>
+                <div className="mt-4 grid gap-4 border-t border-border pt-3 sm:grid-cols-2">
+                  <DateSpan label="Sprint dates" start={sprint.start_date} end={sprint.end_date} />
+                  <div className="text-xs">
+                    <span className="uppercase tracking-wide text-muted-foreground">Owner</span>
+                    <p className="mt-0.5 font-medium">{sprint.owner || "—"}</p>
+                  </div>
+                  <LineList label="Features" value={sprint.features} />
+                  <LineList label="Deliverables" value={sprint.deliverables} />
+                </div>
+              </article>
+            ))
+          )}
+        </div>
+      </section>
 
       <section className="mt-8 space-y-4">
         {hierarchy.isLoading ? (
