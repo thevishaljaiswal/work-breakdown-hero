@@ -260,6 +260,106 @@ export type Database = {
           },
         ]
       }
+      story_tasks: {
+        Row: {
+          acceptance_criteria: string | null
+          assignee: string | null
+          created_at: string
+          estimate_hours: number
+          id: string
+          sort_order: number
+          status: Database["public"]["Enums"]["work_status"]
+          task: string
+          updated_at: string
+          user_story_id: string
+        }
+        Insert: {
+          acceptance_criteria?: string | null
+          assignee?: string | null
+          created_at?: string
+          estimate_hours?: number
+          id?: string
+          sort_order?: number
+          status?: Database["public"]["Enums"]["work_status"]
+          task: string
+          updated_at?: string
+          user_story_id: string
+        }
+        Update: {
+          acceptance_criteria?: string | null
+          assignee?: string | null
+          created_at?: string
+          estimate_hours?: number
+          id?: string
+          sort_order?: number
+          status?: Database["public"]["Enums"]["work_status"]
+          task?: string
+          updated_at?: string
+          user_story_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_tasks_user_story_id_fkey"
+            columns: ["user_story_id"]
+            isOneToOne: false
+            referencedRelation: "user_stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_stories: {
+        Row: {
+          acceptance_criteria: string | null
+          assignee: string | null
+          backlog_item: string | null
+          created_at: string
+          id: string
+          sort_order: number
+          sprint_id: string
+          status: Database["public"]["Enums"]["work_status"]
+          story: string
+          story_code: string
+          story_points: number
+          updated_at: string
+        }
+        Insert: {
+          acceptance_criteria?: string | null
+          assignee?: string | null
+          backlog_item?: string | null
+          created_at?: string
+          id?: string
+          sort_order?: number
+          sprint_id: string
+          status?: Database["public"]["Enums"]["work_status"]
+          story: string
+          story_code: string
+          story_points?: number
+          updated_at?: string
+        }
+        Update: {
+          acceptance_criteria?: string | null
+          assignee?: string | null
+          backlog_item?: string | null
+          created_at?: string
+          id?: string
+          sort_order?: number
+          sprint_id?: string
+          status?: Database["public"]["Enums"]["work_status"]
+          story?: string
+          story_code?: string
+          story_points?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_stories_sprint_id_fkey"
+            columns: ["sprint_id"]
+            isOneToOne: false
+            referencedRelation: "sprints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wbs_items: {
         Row: {
           budget: number
