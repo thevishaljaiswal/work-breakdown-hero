@@ -1,12 +1,75 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Pencil } from "lucide-react";
+import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
-import { fetchTraceability, priorityLabel, statusLabel } from "@/lib/pm";
+import { Button } from "@/components/ui/button";
+import { RecordDialog, type FieldSpec } from "@/components/pm/RecordDialog";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  PRIORITY_OPTIONS,
+  STATUS_OPTIONS,
+  fetchTraceability,
+  priorityLabel,
+  statusLabel,
+  type TraceabilityRow,
+} from "@/lib/pm";
+
+const ROW_FIELDS: FieldSpec[] = [
+  { name: "requirement_id", label: "Requirement ID", type: "text", placeholder: "RQ-101", span: "half" },
+  { name: "story_code", label: "User Story ID", type: "text", placeholder: "US-101", span: "half" },
+  { name: "story", label: "User Story", type: "textarea", required: true },
+  { name: "acceptance_criteria", label: "Acceptance Criteria", type: "textarea" },
+  { name: "test_case_id", label: "Test Case ID", type: "text", placeholder: "TC-103", span: "half" },
+  { name: "priority", label: "Priority", type: "select", options: PRIORITY_OPTIONS, span: "half" },
+  { name: "test_scenario", label: "Test Scenario", type: "textarea", placeholder: "Duplicate Vendor Validation" },
+  { name: "status", label: "Status", type: "select", options: STATUS_OPTIONS, span: "half" },
+];
+
+const STORY_ONLY_FIELDS = ROW_FIELDS.filter(
+  (f) => !["test_case_id", "priority", "test_scenario"].includes(f.name),
+);
 
 export function TraceabilityMatrix({ projectId }: { projectId: string }) {
+  const queryClient = useQueryClient();
   const rows = useQuery({
     queryKey: ["traceability", projectId],
     queryFn: () => fetchTraceability(projectId),
+  });
+
+  const updateRow = useMutation({
+    mutationFn: async ({ row, values }: { row: TraceabilityRow; values: Record<string, string> }) => {
+      const { error: storyError } = await supabase
+        .from("user_stories")
+        .update({
+          requirement_id: values.requirement_id || null,
+          story_code: values.story_code || row.story_code,
+          story: values.story,
+          acceptance_criteria: values.acceptance_criteria || null,
+          ...(row.task_id ? {} : { status: (values.status || "not_started") as never }),
+        })
+        .eq("id", row.story_id);
+      if (storyError) throw storyError;
+
+      if (row.task_id) {
+        const { error: taskError } = await supabase
+          .from("story_tasks")
+          .update({
+            test_case_id: values.test_case_id || null,
+            test_scenario: values.test_scenario || null,
+            priority: (values.priority || "medium") as never,
+            status: (values.status || "not_started") as never,
+          })
+          .eq("id", row.task_id);
+        if (taskError) throw taskError;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Traceability row updated");
+      queryClient.invalidateQueries({ queryKey: ["traceability", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["sprint-backlog"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
   });
 
   const data = rows.data ?? [];
@@ -28,7 +91,7 @@ export function TraceabilityMatrix({ projectId }: { projectId: string }) {
 
   return (
     <div className="overflow-x-auto rounded-lg border border-border bg-card">
-      <table className="w-full min-w-[1000px] text-left text-sm">
+      <table className="w-full min-w-[1100px] text-left text-sm">
         <thead>
           <tr className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
             <th className="p-3 font-medium">Requirement ID</th>
@@ -38,6 +101,7 @@ export function TraceabilityMatrix({ projectId }: { projectId: string }) {
             <th className="p-3 font-medium">Test Scenario</th>
             <th className="p-3 font-medium">Priority</th>
             <th className="p-3 font-medium">Status</th>
+            <th className="p-3 font-medium sr-only">Edit</th>
           </tr>
         </thead>
         <tbody>
@@ -69,6 +133,30 @@ export function TraceabilityMatrix({ projectId }: { projectId: string }) {
                 <Badge variant="secondary" className="text-[10px]">
                   {statusLabel(row.status)}
                 </Badge>
+              </td>
+              <td className="p-3 text-right">
+                <RecordDialog
+                  title={`Edit ${row.requirement_id}`}
+                  description="Update the requirement, user story and linked test case."
+                  fields={row.task_id ? ROW_FIELDS : STORY_ONLY_FIELDS}
+                  submitLabel="Save changes"
+                  initialValues={{
+                    requirement_id: row.requirement_id === "—" ? "" : row.requirement_id,
+                    story_code: row.story_code,
+                    story: row.story,
+                    acceptance_criteria: row.acceptance_criteria ?? "",
+                    test_case_id: row.test_case_id === "—" ? "" : row.test_case_id,
+                    test_scenario: row.test_scenario ?? "",
+                    priority: row.priority === "—" ? "medium" : row.priority,
+                    status: row.status,
+                  }}
+                  onSubmit={(values) => updateRow.mutateAsync({ row, values })}
+                  trigger={
+                    <Button variant="ghost" size="icon" aria-label={`Edit ${row.requirement_id}`}>
+                      <Pencil className="size-4" />
+                    </Button>
+                  }
+                />
               </td>
             </tr>
           ))}
