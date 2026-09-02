@@ -800,7 +800,7 @@ function ProjectDetail() {
               }
             />
           </div>
-          <div className="mt-4 grid gap-4">
+          <div className="mt-4">
             {sprints.isLoading ? (
               <p className="text-sm text-muted-foreground">Loading sprints…</p>
             ) : sprintList.length === 0 ? (
@@ -810,39 +810,66 @@ function ProjectDetail() {
                 </p>
               </div>
             ) : (
-              sprintList.map((sprint) => (
-                <article key={sprint.id} className="rounded-lg border border-border bg-card p-5">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-lg font-semibold">{sprint.name}</h3>
-                      {sprint.goal ? <p className="mt-1 text-sm text-muted-foreground">{sprint.goal}</p> : null}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary">{statusLabel(sprint.status)}</Badge>
-                      <RecordDialog
-                        title={`Edit ${sprint.name}`}
-                        fields={sprintFields}
-                        submitLabel="Save changes"
-                        initialValues={sprint}
-                        onSubmit={(values) => updateSprint.mutateAsync({ id: sprint.id, values })}
-                        trigger={<EditButton label={sprint.name} />}
-                      />
-                    </div>
-                  </div>
-                  <div className="mt-4 grid gap-4 border-t border-border pt-3 sm:grid-cols-2">
-                    <DateSpan label="Sprint dates" start={sprint.start_date} end={sprint.end_date} />
-                    <div className="text-xs">
-                      <span className="uppercase tracking-wide text-muted-foreground">Owner</span>
-                      <p className="mt-0.5 font-medium">{sprint.owner || "—"}</p>
-                    </div>
-                    <LineList label="Features" value={sprint.features} />
-                    <LineList label="Deliverables" value={sprint.deliverables} />
-                  </div>
-                  <SprintBacklog sprintId={sprint.id} />
-                </article>
-              ))
+              <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+                {sprintList.map((sprint) => {
+                  const expanded = openSprint[sprint.id] ?? false;
+                  return (
+                    <li key={sprint.id}>
+                      <div className="flex flex-wrap items-center gap-3 px-3 py-2">
+                        <ExpandButton
+                          expanded={expanded}
+                          onToggle={() => toggle(setOpenSprint, sprint.id, false)}
+                          label={sprint.name}
+                        />
+                        <Rocket className="size-4 shrink-0 text-primary" />
+                        <span className="min-w-[160px] flex-1 truncate text-sm font-medium">{sprint.name}</span>
+                        <span className="hidden min-w-[160px] flex-1 truncate text-xs text-muted-foreground sm:block">
+                          {sprint.goal || "—"}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {formatDate(sprint.start_date)} → {formatDate(sprint.end_date)}
+                        </span>
+                        <Badge variant="secondary" className="text-[10px]">
+                          {statusLabel(sprint.status)}
+                        </Badge>
+                        <div className="flex items-center gap-1">
+                          <RecordDialog
+                            title={`Edit ${sprint.name}`}
+                            fields={sprintFields}
+                            submitLabel="Save changes"
+                            initialValues={sprint}
+                            onSubmit={(values) => updateSprint.mutateAsync({ id: sprint.id, values })}
+                            trigger={<EditButton label={sprint.name} />}
+                          />
+                          <DeleteButton
+                            label={sprint.name}
+                            cascadeNote="user stories and test cases"
+                            onConfirm={() => removeSprint.mutateAsync(sprint.id)}
+                          />
+                        </div>
+                      </div>
+
+                      {expanded ? (
+                        <div className="border-t border-border bg-surface-raised px-4 py-3">
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <DateSpan label="Sprint dates" start={sprint.start_date} end={sprint.end_date} />
+                            <div className="text-xs">
+                              <span className="uppercase tracking-wide text-muted-foreground">Owner</span>
+                              <p className="mt-0.5 font-medium">{sprint.owner || "—"}</p>
+                            </div>
+                            <LineList label="Features" value={sprint.features} />
+                            <LineList label="Deliverables" value={sprint.deliverables} />
+                          </div>
+                          <SprintBacklog sprintId={sprint.id} />
+                        </div>
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ul>
             )}
           </div>
+
         </TabsContent>
 
         <TabsContent value="rtm" className="mt-6">
