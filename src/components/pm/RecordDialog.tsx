@@ -31,22 +31,45 @@ export type FieldSpec = {
   span?: "full" | "half";
 };
 
+type RecordValue = string | number | boolean | null | undefined;
+
 type Props = {
   title: string;
   description?: string;
   fields: FieldSpec[];
   trigger: ReactNode;
   submitLabel?: string;
+  /** When provided, the form opens pre-filled — use for editing an existing record. */
+  initialValues?: Record<string, RecordValue>;
   onSubmit: (values: Record<string, string>) => Promise<void>;
 };
 
-export function RecordDialog({ title, description, fields, trigger, submitLabel = "Save", onSubmit }: Props) {
+function toText(value: RecordValue) {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "boolean") return value ? "true" : "false";
+  return String(value);
+}
+
+export function RecordDialog({
+  title,
+  description,
+  fields,
+  trigger,
+  submitLabel = "Save",
+  initialValues,
+  onSubmit,
+}: Props) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [values, setValues] = useState<Record<string, string>>(() => initial(fields));
+  const [values, setValues] = useState<Record<string, string>>(() => initial(fields, initialValues));
 
-  function initial(specs: FieldSpec[]) {
-    return Object.fromEntries(specs.map((f) => [f.name, f.defaultValue ?? ""]));
+  function initial(specs: FieldSpec[], preset?: Record<string, RecordValue>) {
+    return Object.fromEntries(
+      specs.map((f) => [
+        f.name,
+        preset && f.name in preset ? toText(preset[f.name]) : (f.defaultValue ?? ""),
+      ]),
+    );
   }
 
   async function handleSubmit(event: React.FormEvent) {
@@ -54,7 +77,7 @@ export function RecordDialog({ title, description, fields, trigger, submitLabel 
     setSaving(true);
     try {
       await onSubmit(values);
-      setValues(initial(fields));
+      setValues(initial(fields, initialValues));
       setOpen(false);
     } finally {
       setSaving(false);
@@ -66,7 +89,7 @@ export function RecordDialog({ title, description, fields, trigger, submitLabel 
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
-        if (!next) setValues(initial(fields));
+        setValues(initial(fields, initialValues));
       }}
     >
       <DialogTrigger asChild>{trigger}</DialogTrigger>
