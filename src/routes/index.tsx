@@ -165,7 +165,9 @@ function ProjectsPage() {
                       <p className="font-mono text-xs text-accent">{project.code}</p>
                       <h2 className="mt-1 text-lg font-semibold">{project.name}</h2>
                     </div>
-                    <Badge variant="secondary">{statusLabel(project.status)}</Badge>
+                    <Badge variant="secondary" className="mr-10">
+                      {statusLabel(project.status)}
+                    </Badge>
                   </div>
                   {project.description ? (
                     <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">{project.description}</p>
