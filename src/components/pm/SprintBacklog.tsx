@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RecordDialog, type FieldSpec } from "@/components/pm/RecordDialog";
-import { STATUS_OPTIONS, fetchSprintBacklog, statusLabel } from "@/lib/pm";
+import { PRIORITY_OPTIONS, STATUS_OPTIONS, fetchSprintBacklog, priorityLabel, statusLabel } from "@/lib/pm";
 
 const storyFields: FieldSpec[] = [
   { name: "requirement_id", label: "Requirement ID", type: "text", placeholder: "REQ-01", span: "half" },
@@ -47,6 +47,7 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
         story: values.story,
         acceptance_criteria: values.acceptance_criteria || null,
         backlog_item: values.backlog_item || null,
+        requirement_id: values.requirement_id || null,
         assignee: values.assignee || null,
         story_points: values.story_points ? Number(values.story_points) : 0,
         status: (values.status || "not_started") as never,
@@ -65,6 +66,9 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
       const { error } = await supabase.from("story_tasks").insert({
         user_story_id: storyId,
         task: values.task,
+        test_case_id: values.test_case_id || null,
+        test_scenario: values.test_scenario || null,
+        priority: (values.priority || "medium") as never,
         assignee: values.assignee || null,
         estimate_hours: values.estimate_hours ? Number(values.estimate_hours) : 0,
         acceptance_criteria: values.acceptance_criteria || null,
@@ -73,7 +77,7 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Task added");
+      toast.success("Test case added");
       refresh();
     },
     onError: (error: Error) => toast.error(error.message),
@@ -87,7 +91,9 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
           story_code: values.story_code,
           story: values.story,
           acceptance_criteria: values.acceptance_criteria || null,
+          requirement_id: values.requirement_id || null,
           backlog_item: values.backlog_item || null,
+        requirement_id: values.requirement_id || null,
           assignee: values.assignee || null,
           story_points: values.story_points ? Number(values.story_points) : 0,
           status: (values.status || "not_started") as never,
@@ -108,6 +114,9 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
         .from("story_tasks")
         .update({
           task: values.task,
+          test_case_id: values.test_case_id || null,
+          test_scenario: values.test_scenario || null,
+          priority: (values.priority || "medium") as never,
           assignee: values.assignee || null,
           estimate_hours: values.estimate_hours ? Number(values.estimate_hours) : 0,
           acceptance_criteria: values.acceptance_criteria || null,
@@ -117,7 +126,7 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Task updated");
+      toast.success("Test case updated");
       refresh();
     },
     onError: (error: Error) => toast.error(error.message),
@@ -203,7 +212,7 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
                 />
                 <RecordDialog
                   title={`New task in ${story.story_code}`}
-                  fields={taskFields}
+                  fields={testCaseFields}
                   submitLabel="Add task"
                   onSubmit={(values) => addTask.mutateAsync({ storyId: story.id, values })}
                   trigger={
@@ -241,7 +250,7 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
                           <td className="py-2 text-right">
                             <RecordDialog
                               title={`Edit task`}
-                              fields={taskFields}
+                              fields={testCaseFields}
                               submitLabel="Save changes"
                               initialValues={task}
                               onSubmit={(values) => updateTask.mutateAsync({ id: task.id, values })}
