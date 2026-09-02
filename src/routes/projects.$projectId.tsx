@@ -11,6 +11,7 @@ import {
   Plus,
   Layers,
   Rocket,
+  Code2,
   Table2,
   Target,
 } from "lucide-react";
@@ -25,6 +26,7 @@ import { RecordDialog, type FieldSpec } from "@/components/pm/RecordDialog";
 import { SprintBacklog } from "@/components/pm/SprintBacklog";
 import { TraceabilityMatrix } from "@/components/pm/TraceabilityMatrix";
 import { SuccessMetrics } from "@/components/pm/SuccessMetrics";
+import { DevObjects } from "@/components/pm/DevObjects";
 import { DeleteButton } from "@/components/pm/DeleteButton";
 import {
   PRIORITY_OPTIONS,
@@ -514,6 +516,9 @@ function ProjectDetail() {
           <TabsTrigger value="sprints" className="gap-2">
             <Rocket className="size-4" /> Sprint planning
           </TabsTrigger>
+          <TabsTrigger value="dev" className="gap-2">
+            <Code2 className="size-4" /> Development objects
+          </TabsTrigger>
           <TabsTrigger value="rtm" className="gap-2">
             <Table2 className="size-4" /> Traceability matrix
           </TabsTrigger>
@@ -863,6 +868,10 @@ function ProjectDetail() {
             )}
           </div>
 
+        </TabsContent>
+
+        <TabsContent value="dev" className="mt-6">
+          <DevObjects projectId={projectId} />
         </TabsContent>
 
         <TabsContent value="rtm" className="mt-6">
