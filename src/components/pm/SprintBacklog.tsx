@@ -9,6 +9,7 @@ import { RecordDialog, type FieldSpec } from "@/components/pm/RecordDialog";
 import { STATUS_OPTIONS, fetchSprintBacklog, statusLabel } from "@/lib/pm";
 
 const storyFields: FieldSpec[] = [
+  { name: "requirement_id", label: "Requirement ID", type: "text", placeholder: "REQ-01", span: "half" },
   { name: "story_code", label: "User Story ID", type: "text", required: true, placeholder: "US-01", span: "half" },
   { name: "backlog_item", label: "Backlog Item (Feature / PBI)", type: "text", span: "half" },
   { name: "story", label: "User Story", type: "textarea", required: true, placeholder: "As a <role> I want <goal> so that <benefit>" },
@@ -18,12 +19,15 @@ const storyFields: FieldSpec[] = [
   { name: "status", label: "Status", type: "select", options: STATUS_OPTIONS, defaultValue: "not_started", span: "half" },
 ];
 
-const taskFields: FieldSpec[] = [
-  { name: "task", label: "Task", type: "text", required: true },
-  { name: "assignee", label: "Assignee", type: "text", span: "half" },
-  { name: "estimate_hours", label: "Task Estimate (hours)", type: "number", span: "half" },
+const testCaseFields: FieldSpec[] = [
+  { name: "test_case_id", label: "Test Case ID", type: "text", required: true, placeholder: "TC-01", span: "half" },
+  { name: "priority", label: "Priority", type: "select", options: PRIORITY_OPTIONS, defaultValue: "medium", span: "half" },
+  { name: "task", label: "Test case title", type: "text", required: true },
+  { name: "test_scenario", label: "Test Scenario", type: "textarea", placeholder: "Steps / scenario under test" },
+  { name: "assignee", label: "Assignee (tester)", type: "text", span: "half" },
+  { name: "estimate_hours", label: "Estimate (hours)", type: "number", span: "half" },
   { name: "status", label: "Status", type: "select", options: STATUS_OPTIONS, defaultValue: "not_started", span: "half" },
-  { name: "acceptance_criteria", label: "Acceptance criteria — task", type: "textarea" },
+  { name: "acceptance_criteria", label: "Expected result / acceptance criteria", type: "textarea" },
 ];
 
 export function SprintBacklog({ sprintId }: { sprintId: string }) {
