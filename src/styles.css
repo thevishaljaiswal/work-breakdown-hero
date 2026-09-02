@@ -64,6 +64,16 @@
   --color-level-activity: var(--level-activity);
   --color-level-milestone: var(--level-milestone);
   --color-surface-raised: var(--surface-raised);
+  --color-status-not-started: var(--status-not-started);
+  --color-status-not-started-foreground: var(--status-not-started-foreground);
+  --color-status-in-progress: var(--status-in-progress);
+  --color-status-in-progress-foreground: var(--status-in-progress-foreground);
+  --color-status-on-hold: var(--status-on-hold);
+  --color-status-on-hold-foreground: var(--status-on-hold-foreground);
+  --color-status-completed: var(--status-completed);
+  --color-status-completed-foreground: var(--status-completed-foreground);
+  --color-status-cancelled: var(--status-cancelled);
+  --color-status-cancelled-foreground: var(--status-cancelled-foreground);
 }
 
 :root {
@@ -92,6 +102,16 @@
   --level-activity: oklch(0.7 0.13 155);
   --level-milestone: oklch(0.72 0.14 330);
   --surface-raised: oklch(0.27 0.028 252);
+  --status-not-started: oklch(0.42 0.02 252);
+  --status-not-started-foreground: oklch(0.94 0.008 250);
+  --status-in-progress: oklch(0.68 0.13 235);
+  --status-in-progress-foreground: oklch(0.18 0.03 255);
+  --status-on-hold: oklch(0.78 0.15 85);
+  --status-on-hold-foreground: oklch(0.2 0.03 255);
+  --status-completed: oklch(0.68 0.14 152);
+  --status-completed-foreground: oklch(0.18 0.03 255);
+  --status-cancelled: oklch(0.6 0.19 25);
+  --status-cancelled-foreground: oklch(0.97 0.01 250);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
