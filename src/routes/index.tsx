@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, FolderTree, Pencil, Plus } from "lucide-react";
@@ -16,7 +17,6 @@ import {
   fetchProjectRollups,
   fetchProjects,
   formatDate,
-  statusLabel,
 } from "@/lib/pm";
 
 export const Route = createFileRoute("/")({
@@ -56,6 +56,16 @@ function ProjectsPage() {
   const queryClient = useQueryClient();
   const projects = useQuery({ queryKey: ["projects"], queryFn: fetchProjects });
   const rollups = useQuery({ queryKey: ["project-rollups"], queryFn: fetchProjectRollups });
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  const visibleProjects = useMemo(
+    () =>
+      (projects.data ?? []).filter((p) => statusFilter === "all" || p.status === statusFilter),
+    [projects.data, statusFilter],
+  );
+
+  const statusCount = (value: string) =>
+    (projects.data ?? []).filter((p) => value === "all" || p.status === value).length;
 
   const createProject = useMutation({
     mutationFn: async (values: Record<string, string>) => {
@@ -145,11 +155,30 @@ function ProjectsPage() {
         />
       </header>
 
+      <div className="mt-6 flex flex-wrap items-center gap-2">
+        <span className="text-xs uppercase tracking-wide text-muted-foreground">Filter by status</span>
+        {[{ value: "all", label: "All" }, ...STATUS_OPTIONS].map((option) => {
+          const active = statusFilter === option.value;
+          return (
+            <Button
+              key={option.value}
+              type="button"
+              size="sm"
+              variant={active ? "default" : "outline"}
+              onClick={() => setStatusFilter(option.value)}
+            >
+              {option.label}
+              <span className="ml-1 text-xs opacity-70">{statusCount(option.value)}</span>
+            </Button>
+          );
+        })}
+      </div>
+
       {projects.isLoading ? (
         <p className="py-16 text-center text-sm text-muted-foreground">Loading projects…</p>
-      ) : projects.data?.length ? (
+      ) : visibleProjects.length ? (
         <ul className="mt-8 divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
-          {projects.data.map((project) => {
+          {visibleProjects.map((project) => {
             const rollup = rollups.data?.find((r) => r.project_id === project.id);
             return (
               <li
@@ -211,7 +240,9 @@ function ProjectsPage() {
         <div className="mt-12 rounded-lg border border-dashed border-border p-16 text-center">
           <FolderTree className="mx-auto size-8 text-muted-foreground" />
           <p className="mt-4 text-sm text-muted-foreground">
-            No projects yet. Create your first project to start building the hierarchy.
+            {projects.data?.length
+              ? "No projects match this status filter."
+              : "No projects yet. Create your first project to start building the hierarchy."}
           </p>
         </div>
       )}
