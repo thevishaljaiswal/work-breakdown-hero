@@ -79,6 +79,34 @@ function ProjectsPage() {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const updateProject = useMutation({
+    mutationFn: async ({ id, values }: { id: string; values: Record<string, string> }) => {
+      const { error } = await supabase
+        .from("projects")
+        .update({
+          code: values.code,
+          name: values.name,
+          description: values.description || null,
+          client: values.client || null,
+          manager: values.manager || null,
+          status: (values.status || "not_started") as never,
+          priority: (values.priority || "medium") as never,
+          budget: values.budget ? Number(values.budget) : 0,
+          currency: values.currency || "USD",
+          planned_start: values.planned_start || null,
+          planned_end: values.planned_end || null,
+        })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Project updated");
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["project-rollups"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   return (
     <main className="mx-auto w-full max-w-6xl px-6 py-12">
       <header className="flex flex-wrap items-end justify-between gap-6 border-b border-border pb-8">
