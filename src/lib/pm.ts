@@ -9,6 +9,20 @@ export type Sprint = Tables<"sprints">;
 export type UserStory = Tables<"user_stories">;
 export type StoryTask = Tables<"story_tasks">;
 export type UserStoryNode = UserStory & { tasks: StoryTask[] };
+export type SuccessMetric = Tables<"success_metrics">;
+
+export type TraceabilityRow = {
+  id: string;
+  requirement_id: string;
+  story_code: string;
+  story: string;
+  acceptance_criteria: string | null;
+  test_case_id: string;
+  test_scenario: string | null;
+  priority: string;
+  status: string;
+  sprint_name: string;
+};
 
 export const STATUS_OPTIONS = [
   { value: "not_started", label: "Not started" },
