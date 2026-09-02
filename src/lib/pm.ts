@@ -10,6 +10,35 @@ export type UserStory = Tables<"user_stories">;
 export type StoryTask = Tables<"story_tasks">;
 export type UserStoryNode = UserStory & { tasks: StoryTask[] };
 export type SuccessMetric = Tables<"success_metrics">;
+export type DevObject = Tables<"dev_objects">;
+
+export const DEV_OBJECT_TYPE_OPTIONS = [
+  { value: "report", label: "Report" },
+  { value: "interface", label: "Interface" },
+  { value: "conversion", label: "Conversion / migration" },
+  { value: "enhancement", label: "Enhancement" },
+  { value: "form", label: "Form" },
+  { value: "workflow", label: "Workflow" },
+  { value: "api", label: "API / service" },
+  { value: "ui", label: "UI screen" },
+  { value: "database", label: "Database object" },
+  { value: "other", label: "Other" },
+];
+
+export const COMPLEXITY_OPTIONS = [
+  { value: "low", label: "Low" },
+  { value: "medium", label: "Medium" },
+  { value: "high", label: "High" },
+  { value: "very_high", label: "Very high" },
+];
+
+export function devObjectTypeLabel(value: string) {
+  return DEV_OBJECT_TYPE_OPTIONS.find((o) => o.value === value)?.label ?? value;
+}
+
+export function complexityLabel(value: string) {
+  return COMPLEXITY_OPTIONS.find((o) => o.value === value)?.label ?? value;
+}
 
 export type TraceabilityRow = {
   id: string;
@@ -117,6 +146,23 @@ export async function deleteSprint(id: string) {
   if (storyError) throw storyError;
   for (const story of stories ?? []) await deleteUserStory(story.id);
   const { error } = await supabase.from("sprints").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function fetchDevObjects(sprintIds: string[]): Promise<DevObject[]> {
+  if (!sprintIds.length) return [];
+  const { data, error } = await supabase
+    .from("dev_objects")
+    .select("*")
+    .in("sprint_id", sprintIds)
+    .order("sort_order")
+    .order("object_code");
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteDevObject(id: string) {
+  const { error } = await supabase.from("dev_objects").delete().eq("id", id);
   if (error) throw error;
 }
 
