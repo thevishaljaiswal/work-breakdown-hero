@@ -211,62 +211,84 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
                   }
                 />
                 <RecordDialog
-                  title={`New task in ${story.story_code}`}
+                  title={`New test case in ${story.story_code}`}
                   fields={testCaseFields}
-                  submitLabel="Add task"
+                  submitLabel="Add test case"
                   onSubmit={(values) => addTask.mutateAsync({ storyId: story.id, values })}
                   trigger={
                     <Button variant="ghost" size="sm">
-                      <Plus className="size-4" /> Task
+                      <Plus className="size-4" /> Test case
                     </Button>
                   }
                 />
                 </div>
               </div>
 
-              {story.tasks.length > 0 ? (
-                <div className="mt-3 overflow-x-auto border-t border-border pt-3">
-                  <table className="w-full min-w-[520px] text-left text-sm">
-                    <thead>
-                      <tr className="text-xs uppercase tracking-wide text-muted-foreground">
-                        <th className="pb-2 pr-3 font-medium">Task</th>
-                        <th className="pb-2 pr-3 font-medium">Assignee</th>
-                        <th className="pb-2 pr-3 font-medium">Est. (h)</th>
-                        <th className="pb-2 pr-3 font-medium">Status</th>
-                        <th className="pb-2 pr-3 font-medium">Acceptance criteria</th>
-                        <th className="pb-2 font-medium sr-only">Edit</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {story.tasks.map((task) => (
-                        <tr key={task.id} className="border-t border-border/60 align-top">
-                          <td className="py-2 pr-3">{task.task}</td>
-                          <td className="py-2 pr-3 text-muted-foreground">{task.assignee || "—"}</td>
-                          <td className="py-2 pr-3 text-muted-foreground">{Number(task.estimate_hours)}</td>
-                          <td className="py-2 pr-3 text-muted-foreground">{statusLabel(task.status)}</td>
-                          <td className="py-2 pr-3 whitespace-pre-line text-muted-foreground">
-                            {task.acceptance_criteria || "—"}
-                          </td>
-                          <td className="py-2 text-right">
-                            <RecordDialog
-                              title={`Edit task`}
-                              fields={testCaseFields}
-                              submitLabel="Save changes"
-                              initialValues={task}
-                              onSubmit={(values) => updateTask.mutateAsync({ id: task.id, values })}
-                              trigger={
-                                <Button variant="ghost" size="icon" aria-label="Edit task" className="size-8">
-                                  <Pencil className="size-4" />
-                                </Button>
-                              }
-                            />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : null}
+              <div className="mt-3 border-t border-border pt-3">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Test cases ({story.tasks.length})
+                </p>
+                {story.tasks.length === 0 ? (
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    No test cases yet — add one with its test case ID, scenario and priority.
+                  </p>
+                ) : (
+                  <div className="mt-2 grid gap-2">
+                    {story.tasks.map((task) => (
+                      <div
+                        key={task.id}
+                        className="rounded-md border border-border/70 bg-card p-3"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-mono text-xs text-primary">
+                                {task.test_case_id || "TC-—"}
+                              </span>
+                              <Badge variant="outline" className="text-[10px]">
+                                {priorityLabel(task.priority)}
+                              </Badge>
+                              <Badge variant="secondary" className="text-[10px]">
+                                {statusLabel(task.status)}
+                              </Badge>
+                            </div>
+                            <p className="mt-1 text-sm font-medium">{task.task}</p>
+                          </div>
+                          <RecordDialog
+                            title={`Edit ${task.test_case_id || "test case"}`}
+                            fields={testCaseFields}
+                            submitLabel="Save changes"
+                            initialValues={task}
+                            onSubmit={(values) => updateTask.mutateAsync({ id: task.id, values })}
+                            trigger={
+                              <Button variant="ghost" size="icon" aria-label="Edit test case" className="size-8">
+                                <Pencil className="size-4" />
+                              </Button>
+                            }
+                          />
+                        </div>
+                        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                          <div className="text-xs">
+                            <span className="uppercase tracking-wide text-muted-foreground">Test scenario</span>
+                            <p className="whitespace-pre-line text-sm text-muted-foreground">
+                              {task.test_scenario || "—"}
+                            </p>
+                          </div>
+                          <div className="text-xs">
+                            <span className="uppercase tracking-wide text-muted-foreground">Expected result</span>
+                            <p className="whitespace-pre-line text-sm text-muted-foreground">
+                              {task.acceptance_criteria || "—"}
+                            </p>
+                          </div>
+                        </div>
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          Tester: {task.assignee || "—"} · {Number(task.estimate_hours)} h
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>
