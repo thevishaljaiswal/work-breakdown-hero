@@ -139,7 +139,22 @@ function ProjectsPage() {
           {projects.data.map((project) => {
             const rollup = rollups.data?.find((r) => r.project_id === project.id);
             return (
-              <li key={project.id}>
+              <li key={project.id} className="relative">
+                <div className="absolute right-4 top-4 z-10">
+                  <RecordDialog
+                    title={`Edit ${project.code}`}
+                    description="Update this project's details."
+                    fields={PROJECT_FIELDS}
+                    submitLabel="Save changes"
+                    initialValues={project}
+                    onSubmit={(values) => updateProject.mutateAsync({ id: project.id, values })}
+                    trigger={
+                      <Button variant="ghost" size="icon" aria-label={`Edit ${project.name}`}>
+                        <Pencil className="size-4" />
+                      </Button>
+                    }
+                  />
+                </div>
                 <Link
                   to="/projects/$projectId"
                   params={{ projectId: project.id }}
