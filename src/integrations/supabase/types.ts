@@ -267,9 +267,12 @@ export type Database = {
           created_at: string
           estimate_hours: number
           id: string
+          priority: Database["public"]["Enums"]["priority_level"]
           sort_order: number
           status: Database["public"]["Enums"]["work_status"]
           task: string
+          test_case_id: string | null
+          test_scenario: string | null
           updated_at: string
           user_story_id: string
         }
@@ -279,9 +282,12 @@ export type Database = {
           created_at?: string
           estimate_hours?: number
           id?: string
+          priority?: Database["public"]["Enums"]["priority_level"]
           sort_order?: number
           status?: Database["public"]["Enums"]["work_status"]
           task: string
+          test_case_id?: string | null
+          test_scenario?: string | null
           updated_at?: string
           user_story_id: string
         }
@@ -291,9 +297,12 @@ export type Database = {
           created_at?: string
           estimate_hours?: number
           id?: string
+          priority?: Database["public"]["Enums"]["priority_level"]
           sort_order?: number
           status?: Database["public"]["Enums"]["work_status"]
           task?: string
+          test_case_id?: string | null
+          test_scenario?: string | null
           updated_at?: string
           user_story_id?: string
         }
@@ -307,6 +316,63 @@ export type Database = {
           },
         ]
       }
+      success_metrics: {
+        Row: {
+          actual: string | null
+          category: string | null
+          created_at: string
+          id: string
+          kpi: string
+          owner: string | null
+          project_id: string
+          sort_order: number
+          status: Database["public"]["Enums"]["work_status"]
+          target: string
+          updated_at: string
+        }
+        Insert: {
+          actual?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          kpi: string
+          owner?: string | null
+          project_id: string
+          sort_order?: number
+          status?: Database["public"]["Enums"]["work_status"]
+          target: string
+          updated_at?: string
+        }
+        Update: {
+          actual?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          kpi?: string
+          owner?: string | null
+          project_id?: string
+          sort_order?: number
+          status?: Database["public"]["Enums"]["work_status"]
+          target?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "success_metrics_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_rollup"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "success_metrics_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_stories: {
         Row: {
           acceptance_criteria: string | null
@@ -314,6 +380,7 @@ export type Database = {
           backlog_item: string | null
           created_at: string
           id: string
+          requirement_id: string | null
           sort_order: number
           sprint_id: string
           status: Database["public"]["Enums"]["work_status"]
@@ -328,6 +395,7 @@ export type Database = {
           backlog_item?: string | null
           created_at?: string
           id?: string
+          requirement_id?: string | null
           sort_order?: number
           sprint_id: string
           status?: Database["public"]["Enums"]["work_status"]
@@ -342,6 +410,7 @@ export type Database = {
           backlog_item?: string | null
           created_at?: string
           id?: string
+          requirement_id?: string | null
           sort_order?: number
           sprint_id?: string
           status?: Database["public"]["Enums"]["work_status"]

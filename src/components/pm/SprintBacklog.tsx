@@ -6,9 +6,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RecordDialog, type FieldSpec } from "@/components/pm/RecordDialog";
-import { STATUS_OPTIONS, fetchSprintBacklog, statusLabel } from "@/lib/pm";
+import { PRIORITY_OPTIONS, STATUS_OPTIONS, fetchSprintBacklog, priorityLabel, statusLabel } from "@/lib/pm";
 
 const storyFields: FieldSpec[] = [
+  { name: "requirement_id", label: "Requirement ID", type: "text", placeholder: "REQ-01", span: "half" },
   { name: "story_code", label: "User Story ID", type: "text", required: true, placeholder: "US-01", span: "half" },
   { name: "backlog_item", label: "Backlog Item (Feature / PBI)", type: "text", span: "half" },
   { name: "story", label: "User Story", type: "textarea", required: true, placeholder: "As a <role> I want <goal> so that <benefit>" },
@@ -18,12 +19,15 @@ const storyFields: FieldSpec[] = [
   { name: "status", label: "Status", type: "select", options: STATUS_OPTIONS, defaultValue: "not_started", span: "half" },
 ];
 
-const taskFields: FieldSpec[] = [
-  { name: "task", label: "Task", type: "text", required: true },
-  { name: "assignee", label: "Assignee", type: "text", span: "half" },
-  { name: "estimate_hours", label: "Task Estimate (hours)", type: "number", span: "half" },
+const testCaseFields: FieldSpec[] = [
+  { name: "test_case_id", label: "Test Case ID", type: "text", required: true, placeholder: "TC-01", span: "half" },
+  { name: "priority", label: "Priority", type: "select", options: PRIORITY_OPTIONS, defaultValue: "medium", span: "half" },
+  { name: "task", label: "Test case title", type: "text", required: true },
+  { name: "test_scenario", label: "Test Scenario", type: "textarea", placeholder: "Steps / scenario under test" },
+  { name: "assignee", label: "Assignee (tester)", type: "text", span: "half" },
+  { name: "estimate_hours", label: "Estimate (hours)", type: "number", span: "half" },
   { name: "status", label: "Status", type: "select", options: STATUS_OPTIONS, defaultValue: "not_started", span: "half" },
-  { name: "acceptance_criteria", label: "Acceptance criteria — task", type: "textarea" },
+  { name: "acceptance_criteria", label: "Expected result / acceptance criteria", type: "textarea" },
 ];
 
 export function SprintBacklog({ sprintId }: { sprintId: string }) {
@@ -33,7 +37,10 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
     queryFn: () => fetchSprintBacklog(sprintId),
   });
 
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ["sprint-backlog", sprintId] });
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["sprint-backlog", sprintId] });
+    queryClient.invalidateQueries({ queryKey: ["traceability"] });
+  };
 
   const addStory = useMutation({
     mutationFn: async (values: Record<string, string>) => {
@@ -43,6 +50,7 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
         story: values.story,
         acceptance_criteria: values.acceptance_criteria || null,
         backlog_item: values.backlog_item || null,
+        requirement_id: values.requirement_id || null,
         assignee: values.assignee || null,
         story_points: values.story_points ? Number(values.story_points) : 0,
         status: (values.status || "not_started") as never,
@@ -61,6 +69,9 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
       const { error } = await supabase.from("story_tasks").insert({
         user_story_id: storyId,
         task: values.task,
+        test_case_id: values.test_case_id || null,
+        test_scenario: values.test_scenario || null,
+        priority: (values.priority || "medium") as never,
         assignee: values.assignee || null,
         estimate_hours: values.estimate_hours ? Number(values.estimate_hours) : 0,
         acceptance_criteria: values.acceptance_criteria || null,
@@ -69,7 +80,7 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Task added");
+      toast.success("Test case added");
       refresh();
     },
     onError: (error: Error) => toast.error(error.message),
@@ -83,6 +94,7 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
           story_code: values.story_code,
           story: values.story,
           acceptance_criteria: values.acceptance_criteria || null,
+          requirement_id: values.requirement_id || null,
           backlog_item: values.backlog_item || null,
           assignee: values.assignee || null,
           story_points: values.story_points ? Number(values.story_points) : 0,
@@ -104,6 +116,9 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
         .from("story_tasks")
         .update({
           task: values.task,
+          test_case_id: values.test_case_id || null,
+          test_scenario: values.test_scenario || null,
+          priority: (values.priority || "medium") as never,
           assignee: values.assignee || null,
           estimate_hours: values.estimate_hours ? Number(values.estimate_hours) : 0,
           acceptance_criteria: values.acceptance_criteria || null,
@@ -113,7 +128,7 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Task updated");
+      toast.success("Test case updated");
       refresh();
     },
     onError: (error: Error) => toast.error(error.message),
@@ -160,6 +175,11 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-mono text-xs text-primary">{story.story_code}</span>
+                    {story.requirement_id ? (
+                      <Badge variant="outline" className="text-xs">
+                        {story.requirement_id}
+                      </Badge>
+                    ) : null}
                     {story.backlog_item ? (
                       <Badge variant="outline" className="text-xs">
                         {story.backlog_item}
@@ -198,62 +218,84 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
                   }
                 />
                 <RecordDialog
-                  title={`New task in ${story.story_code}`}
-                  fields={taskFields}
-                  submitLabel="Add task"
+                  title={`New test case in ${story.story_code}`}
+                  fields={testCaseFields}
+                  submitLabel="Add test case"
                   onSubmit={(values) => addTask.mutateAsync({ storyId: story.id, values })}
                   trigger={
                     <Button variant="ghost" size="sm">
-                      <Plus className="size-4" /> Task
+                      <Plus className="size-4" /> Test case
                     </Button>
                   }
                 />
                 </div>
               </div>
 
-              {story.tasks.length > 0 ? (
-                <div className="mt-3 overflow-x-auto border-t border-border pt-3">
-                  <table className="w-full min-w-[520px] text-left text-sm">
-                    <thead>
-                      <tr className="text-xs uppercase tracking-wide text-muted-foreground">
-                        <th className="pb-2 pr-3 font-medium">Task</th>
-                        <th className="pb-2 pr-3 font-medium">Assignee</th>
-                        <th className="pb-2 pr-3 font-medium">Est. (h)</th>
-                        <th className="pb-2 pr-3 font-medium">Status</th>
-                        <th className="pb-2 pr-3 font-medium">Acceptance criteria</th>
-                        <th className="pb-2 font-medium sr-only">Edit</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {story.tasks.map((task) => (
-                        <tr key={task.id} className="border-t border-border/60 align-top">
-                          <td className="py-2 pr-3">{task.task}</td>
-                          <td className="py-2 pr-3 text-muted-foreground">{task.assignee || "—"}</td>
-                          <td className="py-2 pr-3 text-muted-foreground">{Number(task.estimate_hours)}</td>
-                          <td className="py-2 pr-3 text-muted-foreground">{statusLabel(task.status)}</td>
-                          <td className="py-2 pr-3 whitespace-pre-line text-muted-foreground">
-                            {task.acceptance_criteria || "—"}
-                          </td>
-                          <td className="py-2 text-right">
-                            <RecordDialog
-                              title={`Edit task`}
-                              fields={taskFields}
-                              submitLabel="Save changes"
-                              initialValues={task}
-                              onSubmit={(values) => updateTask.mutateAsync({ id: task.id, values })}
-                              trigger={
-                                <Button variant="ghost" size="icon" aria-label="Edit task" className="size-8">
-                                  <Pencil className="size-4" />
-                                </Button>
-                              }
-                            />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : null}
+              <div className="mt-3 border-t border-border pt-3">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Test cases ({story.tasks.length})
+                </p>
+                {story.tasks.length === 0 ? (
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    No test cases yet — add one with its test case ID, scenario and priority.
+                  </p>
+                ) : (
+                  <div className="mt-2 grid gap-2">
+                    {story.tasks.map((task) => (
+                      <div
+                        key={task.id}
+                        className="rounded-md border border-border/70 bg-card p-3"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-mono text-xs text-primary">
+                                {task.test_case_id || "TC-—"}
+                              </span>
+                              <Badge variant="outline" className="text-[10px]">
+                                {priorityLabel(task.priority)}
+                              </Badge>
+                              <Badge variant="secondary" className="text-[10px]">
+                                {statusLabel(task.status)}
+                              </Badge>
+                            </div>
+                            <p className="mt-1 text-sm font-medium">{task.task}</p>
+                          </div>
+                          <RecordDialog
+                            title={`Edit ${task.test_case_id || "test case"}`}
+                            fields={testCaseFields}
+                            submitLabel="Save changes"
+                            initialValues={task}
+                            onSubmit={(values) => updateTask.mutateAsync({ id: task.id, values })}
+                            trigger={
+                              <Button variant="ghost" size="icon" aria-label="Edit test case" className="size-8">
+                                <Pencil className="size-4" />
+                              </Button>
+                            }
+                          />
+                        </div>
+                        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                          <div className="text-xs">
+                            <span className="uppercase tracking-wide text-muted-foreground">Test scenario</span>
+                            <p className="whitespace-pre-line text-sm text-muted-foreground">
+                              {task.test_scenario || "—"}
+                            </p>
+                          </div>
+                          <div className="text-xs">
+                            <span className="uppercase tracking-wide text-muted-foreground">Expected result</span>
+                            <p className="whitespace-pre-line text-sm text-muted-foreground">
+                              {task.acceptance_criteria || "—"}
+                            </p>
+                          </div>
+                        </div>
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          Tester: {task.assignee || "—"} · {Number(task.estimate_hours)} h
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>

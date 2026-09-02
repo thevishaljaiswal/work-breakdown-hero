@@ -11,6 +11,8 @@ import {
   Plus,
   Layers,
   Rocket,
+  Table2,
+  Target,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -20,6 +22,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RecordDialog, type FieldSpec } from "@/components/pm/RecordDialog";
 import { SprintBacklog } from "@/components/pm/SprintBacklog";
+import { TraceabilityMatrix } from "@/components/pm/TraceabilityMatrix";
+import { SuccessMetrics } from "@/components/pm/SuccessMetrics";
 import {
   PRIORITY_OPTIONS,
   STATUS_OPTIONS,
@@ -452,6 +456,12 @@ function ProjectDetail() {
           <TabsTrigger value="sprints" className="gap-2">
             <Rocket className="size-4" /> Sprint planning
           </TabsTrigger>
+          <TabsTrigger value="rtm" className="gap-2">
+            <Table2 className="size-4" /> Traceability matrix
+          </TabsTrigger>
+          <TabsTrigger value="metrics" className="gap-2">
+            <Target className="size-4" /> Success metrics
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="wbs" className="mt-6">
@@ -736,6 +746,23 @@ function ProjectDetail() {
               ))
             )}
           </div>
+        </TabsContent>
+
+        <TabsContent value="rtm" className="mt-6">
+          <div className="flex flex-wrap items-center gap-2">
+            <Table2 className="size-4 text-primary" />
+            <h2 className="text-xl font-semibold tracking-tight">Requirement traceability matrix</h2>
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Every requirement traced through its user story, acceptance criteria and test cases.
+          </p>
+          <div className="mt-4">
+            <TraceabilityMatrix projectId={projectId} />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="metrics" className="mt-6">
+          <SuccessMetrics projectId={projectId} />
         </TabsContent>
       </Tabs>
     </main>
