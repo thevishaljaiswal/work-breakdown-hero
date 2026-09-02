@@ -541,7 +541,7 @@ function ProjectDetail() {
             />
           </div>
 
-          <section className="mt-4 space-y-4">
+          <section className="mt-4">
             {hierarchy.isLoading ? (
               <p className="py-12 text-center text-sm text-muted-foreground">Loading breakdown…</p>
             ) : wbsList.length === 0 ? (
@@ -552,193 +552,233 @@ function ProjectDetail() {
                 </p>
               </div>
             ) : (
-              wbsList.map((wbs) => {
-                const wbsDates = wbsSpan(wbs);
-                const wbsExpanded = openWbs[wbs.id] ?? false;
-                return (
-                  <article key={wbs.id} className="rounded-lg border border-border bg-card p-5">
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                      <div className="flex gap-2">
+              <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+                {wbsList.map((wbs) => {
+                  const wbsDates = wbsSpan(wbs);
+                  const wbsExpanded = openWbs[wbs.id] ?? false;
+                  return (
+                    <li key={wbs.id}>
+                      <div className="flex flex-wrap items-center gap-3 px-3 py-2">
                         <ExpandButton
                           expanded={wbsExpanded}
                           onToggle={() => toggle(setOpenWbs, wbs.id, false)}
                           label={`WBS ${wbs.code}`}
                         />
-                        <Layers className="mt-1.5 size-4 text-level-wbs" />
-                        <div>
-                          <p className="font-mono text-xs text-level-wbs">WBS {wbs.code}</p>
-                          <h3 className="text-lg font-semibold">{wbs.name}</h3>
-                          {wbs.description ? (
-                            <p className="mt-1 text-sm text-muted-foreground">{wbs.description}</p>
-                          ) : null}
+                        <Layers className="size-4 shrink-0 text-level-wbs" />
+                        <span className="w-20 shrink-0 font-mono text-xs text-level-wbs">{wbs.code}</span>
+                        <span className="min-w-[180px] flex-1 truncate text-sm font-medium">{wbs.name}</span>
+                        <span className="hidden text-xs text-muted-foreground sm:block">
+                          {formatDate(wbsDates.start)} → {formatDate(wbsDates.end)}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {wbs.activities.length} activities
+                        </span>
+                        <Badge variant="secondary" className="text-[10px]">
+                          {statusLabel(wbs.status)}
+                        </Badge>
+                        <div className="flex items-center gap-1">
+                          <RecordDialog
+                            title={`Edit WBS ${wbs.code}`}
+                            fields={wbsFields}
+                            submitLabel="Save changes"
+                            initialValues={wbs}
+                            onSubmit={(values) => updateWbs.mutateAsync({ id: wbs.id, values })}
+                            trigger={<EditButton label={`WBS ${wbs.code}`} />}
+                          />
+                          <RecordDialog
+                            title={`New activity in WBS ${wbs.code}`}
+                            fields={activityFields}
+                            submitLabel="Add activity"
+                            onSubmit={(values) => addActivity.mutateAsync({ wbsId: wbs.id, values })}
+                            trigger={
+                              <Button variant="outline" size="sm">
+                                <Plus className="size-4" /> Activity
+                              </Button>
+                            }
+                          />
+                          <DeleteButton
+                            label={`WBS ${wbs.code}`}
+                            cascadeNote="activities and milestones"
+                            onConfirm={() => removeWbs.mutateAsync(wbs.id)}
+                          />
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary">{statusLabel(wbs.status)}</Badge>
-                        <RecordDialog
-                          title={`Edit WBS ${wbs.code}`}
-                          fields={wbsFields}
-                          submitLabel="Save changes"
-                          initialValues={wbs}
-                          onSubmit={(values) => updateWbs.mutateAsync({ id: wbs.id, values })}
-                          trigger={<EditButton label={`WBS ${wbs.code}`} />}
-                        />
-                        <RecordDialog
-                          title={`New activity in WBS ${wbs.code}`}
-                          fields={activityFields}
-                          submitLabel="Add activity"
-                          onSubmit={(values) => addActivity.mutateAsync({ wbsId: wbs.id, values })}
-                          trigger={
-                            <Button variant="outline" size="sm">
-                              <Plus className="size-4" /> Activity
-                            </Button>
-                          }
-                        />
-                      </div>
-                    </div>
-                    <div className="mt-4 grid gap-4 border-t border-border pt-3 sm:grid-cols-3">
-                      <DateSpan label="Entered dates" start={wbs.planned_start} end={wbs.planned_end} />
-                      <DateSpan label="Rolled-up dates" start={wbsDates.start} end={wbsDates.end} />
-                      <div className="text-xs">
-                        <span className="uppercase tracking-wide text-muted-foreground">Owner</span>
-                        <p className="mt-0.5 font-medium">{wbs.owner || "—"}</p>
-                      </div>
-                    </div>
 
-                    {wbsExpanded ? (
-                      <div className="mt-4 space-y-3 border-l-2 border-level-activity/40 pl-4">
-                        {wbs.activities.length === 0 ? (
-                          <p className="text-sm text-muted-foreground">No activities in this WBS yet.</p>
-                        ) : (
-                          wbs.activities.map((activity) => {
-                            const actDates = activitySpan(activity);
-                            const actExpanded = openActivity[activity.id] ?? false;
-                            const msExpanded = openMilestones[activity.id] ?? false;
-                            return (
-                              <div key={activity.id} className="rounded-md bg-surface-raised p-4">
-                                <div className="flex flex-wrap items-start justify-between gap-3">
-                                  <div className="flex gap-2">
-                                    <ExpandButton
-                                      expanded={actExpanded}
-                                      onToggle={() => toggle(setOpenActivity, activity.id, false)}
-                                      label={`activity ${activity.code}`}
-                                    />
-                                    <div>
-                                      <p className="font-mono text-xs text-level-activity">{activity.code}</p>
-                                      <h4 className="font-medium">{activity.name}</h4>
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-xs text-muted-foreground">
-                                      {activity.progress_pct}% complete
-                                    </span>
-                                    <RecordDialog
-                                      title={`Edit activity ${activity.code}`}
-                                      fields={activityFields}
-                                      submitLabel="Save changes"
-                                      initialValues={activity}
-                                      onSubmit={(values) => updateActivity.mutateAsync({ id: activity.id, values })}
-                                      trigger={<EditButton label={`activity ${activity.code}`} />}
-                                    />
-                                    <RecordDialog
-                                      title={`New milestone in ${activity.code}`}
-                                      fields={milestoneFields}
-                                      submitLabel="Add milestone"
-                                      onSubmit={(values) =>
-                                        addMilestone.mutateAsync({ activityId: activity.id, values })
-                                      }
-                                      trigger={
-                                        <Button variant="ghost" size="sm">
-                                          <Plus className="size-4" /> Milestone
-                                        </Button>
-                                      }
-                                    />
-                                  </div>
-                                </div>
+                      {wbsExpanded ? (
+                        <div className="border-t border-border bg-surface-raised px-4 py-3">
+                          <div className="grid gap-4 sm:grid-cols-3">
+                            <DateSpan label="Entered dates" start={wbs.planned_start} end={wbs.planned_end} />
+                            <DateSpan label="Rolled-up dates" start={wbsDates.start} end={wbsDates.end} />
+                            <div className="text-xs">
+                              <span className="uppercase tracking-wide text-muted-foreground">Owner</span>
+                              <p className="mt-0.5 font-medium">{wbs.owner || "—"}</p>
+                            </div>
+                          </div>
+                          {wbs.description ? (
+                            <p className="mt-2 text-sm text-muted-foreground">{wbs.description}</p>
+                          ) : null}
 
-                                {actExpanded ? (
-                                  <>
-                                    <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                                      <DateSpan
-                                        label="Entered dates"
-                                        start={activity.planned_start}
-                                        end={activity.planned_end}
+                          {wbs.activities.length === 0 ? (
+                            <p className="mt-3 text-sm text-muted-foreground">
+                              No activities in this WBS yet.
+                            </p>
+                          ) : (
+                            <ul className="mt-3 divide-y divide-border/70 rounded-md border border-border/70 bg-card">
+                              {wbs.activities.map((activity) => {
+                                const actDates = activitySpan(activity);
+                                const actExpanded = openActivity[activity.id] ?? false;
+                                const msExpanded = openMilestones[activity.id] ?? false;
+                                return (
+                                  <li key={activity.id}>
+                                    <div className="flex flex-wrap items-center gap-3 px-3 py-2">
+                                      <ExpandButton
+                                        expanded={actExpanded}
+                                        onToggle={() => toggle(setOpenActivity, activity.id, false)}
+                                        label={`activity ${activity.code}`}
                                       />
-                                      <DateSpan
-                                        label="Rolled-up dates"
-                                        start={actDates.start}
-                                        end={actDates.end}
-                                      />
-                                      <div className="text-xs">
-                                        <span className="uppercase tracking-wide text-muted-foreground">Owner</span>
-                                        <p className="mt-0.5 font-medium">{activity.owner || "—"}</p>
+                                      <span className="w-20 shrink-0 font-mono text-xs text-level-activity">
+                                        {activity.code}
+                                      </span>
+                                      <span className="min-w-[160px] flex-1 truncate text-sm">
+                                        {activity.name}
+                                      </span>
+                                      <span className="hidden text-xs text-muted-foreground sm:block">
+                                        {formatDate(activity.planned_start)} → {formatDate(activity.planned_end)}
+                                      </span>
+                                      <span className="text-xs text-muted-foreground">
+                                        {activity.duration_days} d · {activity.progress_pct}%
+                                      </span>
+                                      <Badge variant="secondary" className="text-[10px]">
+                                        {statusLabel(activity.status)}
+                                      </Badge>
+                                      <div className="flex items-center gap-1">
+                                        <RecordDialog
+                                          title={`Edit activity ${activity.code}`}
+                                          fields={activityFields}
+                                          submitLabel="Save changes"
+                                          initialValues={activity}
+                                          onSubmit={(values) =>
+                                            updateActivity.mutateAsync({ id: activity.id, values })
+                                          }
+                                          trigger={<EditButton label={`activity ${activity.code}`} />}
+                                        />
+                                        <RecordDialog
+                                          title={`New milestone in ${activity.code}`}
+                                          fields={milestoneFields}
+                                          submitLabel="Add milestone"
+                                          onSubmit={(values) =>
+                                            addMilestone.mutateAsync({ activityId: activity.id, values })
+                                          }
+                                          trigger={
+                                            <Button variant="ghost" size="sm">
+                                              <Plus className="size-4" /> Milestone
+                                            </Button>
+                                          }
+                                        />
+                                        <DeleteButton
+                                          label={`activity ${activity.code}`}
+                                          cascadeNote="its milestones"
+                                          onConfirm={() => removeActivity.mutateAsync(activity.id)}
+                                        />
                                       </div>
                                     </div>
 
-                                    <div className="mt-3 flex items-center gap-1">
-                                      <ExpandButton
-                                        expanded={msExpanded}
-                                        onToggle={() => toggle(setOpenMilestones, activity.id, false)}
-                                        label={`milestones of ${activity.code}`}
-                                      />
-                                      <span className="text-xs uppercase tracking-wide text-muted-foreground">
-                                        Milestones ({activity.milestones.length})
-                                      </span>
-                                    </div>
+                                    {actExpanded ? (
+                                      <div className="border-t border-border/70 px-4 py-3">
+                                        <div className="grid gap-3 sm:grid-cols-3">
+                                          <DateSpan
+                                            label="Planned (from duration)"
+                                            start={activity.planned_start}
+                                            end={activity.planned_end}
+                                          />
+                                          <DateSpan
+                                            label="Rolled-up dates"
+                                            start={actDates.start}
+                                            end={actDates.end}
+                                          />
+                                          <div className="text-xs">
+                                            <span className="uppercase tracking-wide text-muted-foreground">
+                                              Owner
+                                            </span>
+                                            <p className="mt-0.5 font-medium">{activity.owner || "—"}</p>
+                                          </div>
+                                        </div>
 
-                                    {msExpanded ? (
-                                      <ul className="mt-2 space-y-2 border-l-2 border-level-milestone/40 pl-4">
-                                        {activity.milestones.length === 0 ? (
-                                          <li className="text-xs text-muted-foreground">No milestones yet.</li>
-                                        ) : (
-                                          activity.milestones.map((milestone) => (
-                                            <li
-                                              key={milestone.id}
-                                              className="flex flex-wrap items-center justify-between gap-2 text-sm"
-                                            >
-                                              <span className="flex items-center gap-2">
-                                                <Flag className="size-3.5 text-level-milestone" />
-                                                {milestone.name}
-                                                {milestone.is_critical ? (
-                                                  <Badge variant="destructive" className="text-[10px]">
-                                                    Critical
+                                        <div className="mt-3 flex items-center gap-1">
+                                          <ExpandButton
+                                            expanded={msExpanded}
+                                            onToggle={() => toggle(setOpenMilestones, activity.id, false)}
+                                            label={`milestones of ${activity.code}`}
+                                          />
+                                          <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                                            Milestones ({activity.milestones.length})
+                                          </span>
+                                        </div>
+
+                                        {msExpanded ? (
+                                          <ul className="mt-2 divide-y divide-border/70 rounded-md border border-border/70">
+                                            {activity.milestones.length === 0 ? (
+                                              <li className="px-3 py-2 text-xs text-muted-foreground">
+                                                No milestones yet.
+                                              </li>
+                                            ) : (
+                                              activity.milestones.map((milestone) => (
+                                                <li
+                                                  key={milestone.id}
+                                                  className="flex flex-wrap items-center gap-3 px-3 py-2"
+                                                >
+                                                  <Flag className="size-3.5 shrink-0 text-level-milestone" />
+                                                  <span className="min-w-[160px] flex-1 truncate text-sm">
+                                                    {milestone.name}
+                                                  </span>
+                                                  {milestone.is_critical ? (
+                                                    <Badge variant="destructive" className="text-[10px]">
+                                                      Critical
+                                                    </Badge>
+                                                  ) : null}
+                                                  <span className="text-xs text-muted-foreground">
+                                                    {formatDate(milestone.actual_date ?? milestone.due_date)}
+                                                  </span>
+                                                  <Badge variant="secondary" className="text-[10px]">
+                                                    {statusLabel(milestone.status)}
                                                   </Badge>
-                                                ) : null}
-                                              </span>
-                                              <span className="flex items-center gap-2">
-                                                <span className="text-xs text-muted-foreground">
-                                                  {statusLabel(milestone.status)} ·{" "}
-                                                  {formatDate(milestone.actual_date ?? milestone.due_date)}
-                                                </span>
-                                                <RecordDialog
-                                                  title={`Edit ${milestone.name}`}
-                                                  fields={milestoneFields}
-                                                  submitLabel="Save changes"
-                                                  initialValues={milestone}
-                                                  onSubmit={(values) =>
-                                                    updateMilestone.mutateAsync({ id: milestone.id, values })
-                                                  }
-                                                  trigger={<EditButton label={milestone.name} />}
-                                                />
-                                              </span>
-                                            </li>
-                                          ))
-                                        )}
-                                      </ul>
+                                                  <div className="flex items-center gap-1">
+                                                    <RecordDialog
+                                                      title={`Edit ${milestone.name}`}
+                                                      fields={milestoneFields}
+                                                      submitLabel="Save changes"
+                                                      initialValues={milestone}
+                                                      onSubmit={(values) =>
+                                                        updateMilestone.mutateAsync({ id: milestone.id, values })
+                                                      }
+                                                      trigger={<EditButton label={milestone.name} />}
+                                                    />
+                                                    <DeleteButton
+                                                      label={milestone.name}
+                                                      onConfirm={() => removeMilestone.mutateAsync(milestone.id)}
+                                                    />
+                                                  </div>
+                                                </li>
+                                              ))
+                                            )}
+                                          </ul>
+                                        ) : null}
+                                      </div>
                                     ) : null}
-                                  </>
-                                ) : null}
-                              </div>
-                            );
-                          })
-                        )}
-                      </div>
-                    ) : null}
-                  </article>
-                );
-              })
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          )}
+                        </div>
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ul>
             )}
           </section>
+
         </TabsContent>
 
         <TabsContent value="sprints" className="mt-6">
