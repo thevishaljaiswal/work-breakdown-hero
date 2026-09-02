@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, FolderTree, Plus } from "lucide-react";
+import { ArrowRight, FolderTree, Pencil, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -79,6 +79,34 @@ function ProjectsPage() {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const updateProject = useMutation({
+    mutationFn: async ({ id, values }: { id: string; values: Record<string, string> }) => {
+      const { error } = await supabase
+        .from("projects")
+        .update({
+          code: values.code,
+          name: values.name,
+          description: values.description || null,
+          client: values.client || null,
+          manager: values.manager || null,
+          status: (values.status || "not_started") as never,
+          priority: (values.priority || "medium") as never,
+          budget: values.budget ? Number(values.budget) : 0,
+          currency: values.currency || "USD",
+          planned_start: values.planned_start || null,
+          planned_end: values.planned_end || null,
+        })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Project updated");
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["project-rollups"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   return (
     <main className="mx-auto w-full max-w-6xl px-6 py-12">
       <header className="flex flex-wrap items-end justify-between gap-6 border-b border-border pb-8">
@@ -111,7 +139,22 @@ function ProjectsPage() {
           {projects.data.map((project) => {
             const rollup = rollups.data?.find((r) => r.project_id === project.id);
             return (
-              <li key={project.id}>
+              <li key={project.id} className="relative">
+                <div className="absolute right-4 top-4 z-10">
+                  <RecordDialog
+                    title={`Edit ${project.code}`}
+                    description="Update this project's details."
+                    fields={PROJECT_FIELDS}
+                    submitLabel="Save changes"
+                    initialValues={project}
+                    onSubmit={(values) => updateProject.mutateAsync({ id: project.id, values })}
+                    trigger={
+                      <Button variant="ghost" size="icon" aria-label={`Edit ${project.name}`}>
+                        <Pencil className="size-4" />
+                      </Button>
+                    }
+                  />
+                </div>
                 <Link
                   to="/projects/$projectId"
                   params={{ projectId: project.id }}
@@ -122,7 +165,9 @@ function ProjectsPage() {
                       <p className="font-mono text-xs text-accent">{project.code}</p>
                       <h2 className="mt-1 text-lg font-semibold">{project.name}</h2>
                     </div>
-                    <Badge variant="secondary">{statusLabel(project.status)}</Badge>
+                    <Badge variant="secondary" className="mr-10">
+                      {statusLabel(project.status)}
+                    </Badge>
                   </div>
                   {project.description ? (
                     <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">{project.description}</p>
