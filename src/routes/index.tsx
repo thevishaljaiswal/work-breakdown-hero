@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/pm/StatusBadge";
 import { RecordDialog, type FieldSpec } from "@/components/pm/RecordDialog";
 import { DeleteButton } from "@/components/pm/DeleteButton";
 import {
@@ -181,7 +182,7 @@ function ProjectsPage() {
                     <p className="uppercase tracking-wide text-muted-foreground">WBS</p>
                     <p className="mt-0.5 font-medium">{rollup?.wbs_count ?? 0}</p>
                   </div>
-                  <Badge variant="secondary">{statusLabel(project.status)}</Badge>
+                  <StatusBadge status={project.status} />
                   <ArrowRight className="size-4 text-primary transition-transform group-hover:translate-x-1" />
                 </Link>
                 <RecordDialog

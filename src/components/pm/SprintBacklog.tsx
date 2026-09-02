@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/pm/StatusBadge";
 import { RecordDialog, type FieldSpec } from "@/components/pm/RecordDialog";
 import { DeleteButton } from "@/components/pm/DeleteButton";
 import {
@@ -222,9 +223,7 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
                   <span className="min-w-[200px] flex-1 truncate text-sm">{story.story}</span>
                   <span className="text-xs text-muted-foreground">{story.tasks.length} test cases</span>
                   <span className="text-xs text-muted-foreground">{story.story_points} pts</span>
-                  <Badge variant="secondary" className="text-[10px]">
-                    {statusLabel(story.status)}
-                  </Badge>
+                  <StatusBadge status={story.status} />
                   <div className="flex items-center gap-1">
                     <RecordDialog
                       title={`Edit ${story.story_code}`}
@@ -306,9 +305,7 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
                             <Badge variant="outline" className="text-[10px]">
                               {priorityLabel(task.priority)}
                             </Badge>
-                            <Badge variant="secondary" className="text-[10px]">
-                              {statusLabel(task.status)}
-                            </Badge>
+                            <StatusBadge status={task.status} />
                             <span className="text-xs text-muted-foreground">
                               {Number(task.estimate_hours)} h
                             </span>
