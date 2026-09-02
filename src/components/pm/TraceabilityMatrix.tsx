@@ -6,9 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RecordDialog, type FieldSpec } from "@/components/pm/RecordDialog";
 import { supabase } from "@/integrations/supabase/client";
+import { DeleteButton } from "@/components/pm/DeleteButton";
 import {
   PRIORITY_OPTIONS,
   STATUS_OPTIONS,
+  deleteTestCase,
+  deleteUserStory,
   fetchTraceability,
   priorityLabel,
   statusLabel,
@@ -66,6 +69,17 @@ export function TraceabilityMatrix({ projectId }: { projectId: string }) {
     },
     onSuccess: () => {
       toast.success("Traceability row updated");
+      queryClient.invalidateQueries({ queryKey: ["traceability", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["sprint-backlog"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const removeRow = useMutation({
+    mutationFn: (row: TraceabilityRow) =>
+      row.task_id ? deleteTestCase(row.task_id) : deleteUserStory(row.story_id),
+    onSuccess: () => {
+      toast.success("Traceability row deleted");
       queryClient.invalidateQueries({ queryKey: ["traceability", projectId] });
       queryClient.invalidateQueries({ queryKey: ["sprint-backlog"] });
     },
@@ -135,6 +149,7 @@ export function TraceabilityMatrix({ projectId }: { projectId: string }) {
                 </Badge>
               </td>
               <td className="p-3 text-right">
+                <div className="flex items-center justify-end gap-1">
                 <RecordDialog
                   title={`Edit ${row.requirement_id}`}
                   description="Update the requirement, user story and linked test case."
@@ -157,6 +172,12 @@ export function TraceabilityMatrix({ projectId }: { projectId: string }) {
                     </Button>
                   }
                 />
+                <DeleteButton
+                  label={row.task_id ? row.test_case_id : row.story_code}
+                  cascadeNote={row.task_id ? undefined : "its test cases"}
+                  onConfirm={() => removeRow.mutateAsync(row)}
+                />
+                </div>
               </td>
             </tr>
           ))}
