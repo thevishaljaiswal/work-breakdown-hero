@@ -86,6 +86,99 @@ export type Database = {
           },
         ]
       }
+      dev_objects: {
+        Row: {
+          actual_end: string | null
+          actual_hours: number
+          complexity: string
+          created_at: string
+          description: string | null
+          developer: string | null
+          estimate_hours: number
+          id: string
+          module: string | null
+          name: string
+          object_code: string
+          object_type: string
+          planned_end: string | null
+          planned_start: string | null
+          priority: Database["public"]["Enums"]["priority_level"]
+          reviewer: string | null
+          sort_order: number
+          sprint_id: string
+          status: Database["public"]["Enums"]["work_status"]
+          technical_spec: string | null
+          transport_request: string | null
+          updated_at: string
+          user_story_id: string | null
+        }
+        Insert: {
+          actual_end?: string | null
+          actual_hours?: number
+          complexity?: string
+          created_at?: string
+          description?: string | null
+          developer?: string | null
+          estimate_hours?: number
+          id?: string
+          module?: string | null
+          name: string
+          object_code: string
+          object_type?: string
+          planned_end?: string | null
+          planned_start?: string | null
+          priority?: Database["public"]["Enums"]["priority_level"]
+          reviewer?: string | null
+          sort_order?: number
+          sprint_id: string
+          status?: Database["public"]["Enums"]["work_status"]
+          technical_spec?: string | null
+          transport_request?: string | null
+          updated_at?: string
+          user_story_id?: string | null
+        }
+        Update: {
+          actual_end?: string | null
+          actual_hours?: number
+          complexity?: string
+          created_at?: string
+          description?: string | null
+          developer?: string | null
+          estimate_hours?: number
+          id?: string
+          module?: string | null
+          name?: string
+          object_code?: string
+          object_type?: string
+          planned_end?: string | null
+          planned_start?: string | null
+          priority?: Database["public"]["Enums"]["priority_level"]
+          reviewer?: string | null
+          sort_order?: number
+          sprint_id?: string
+          status?: Database["public"]["Enums"]["work_status"]
+          technical_spec?: string | null
+          transport_request?: string | null
+          updated_at?: string
+          user_story_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dev_objects_sprint_id_fkey"
+            columns: ["sprint_id"]
+            isOneToOne: false
+            referencedRelation: "sprints"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dev_objects_user_story_id_fkey"
+            columns: ["user_story_id"]
+            isOneToOne: false
+            referencedRelation: "user_stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       milestones: {
         Row: {
           activity_id: string
