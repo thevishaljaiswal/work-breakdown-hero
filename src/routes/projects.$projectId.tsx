@@ -24,10 +24,16 @@ import { RecordDialog, type FieldSpec } from "@/components/pm/RecordDialog";
 import { SprintBacklog } from "@/components/pm/SprintBacklog";
 import { TraceabilityMatrix } from "@/components/pm/TraceabilityMatrix";
 import { SuccessMetrics } from "@/components/pm/SuccessMetrics";
+import { DeleteButton } from "@/components/pm/DeleteButton";
 import {
   PRIORITY_OPTIONS,
   STATUS_OPTIONS,
   activitySpan,
+  deleteActivity,
+  deleteMilestone,
+  deleteSprint,
+  deleteWbs,
+  derivePlannedDates,
   fetchHierarchy,
   fetchProject,
   fetchSprints,
@@ -93,7 +99,7 @@ const activityFields: FieldSpec[] = [
   { name: "duration_days", label: "Duration (days)", type: "number", span: "half" },
   { name: "progress_pct", label: "Progress (%)", type: "number", span: "half" },
   { name: "planned_start", label: "Planned start", type: "date", span: "half" },
-  { name: "planned_end", label: "Planned finish", type: "date", span: "half" },
+  { name: "planned_end", label: "Planned finish (auto from duration)", type: "date", span: "half" },
   { name: "actual_start", label: "Actual start", type: "date", span: "half" },
   { name: "actual_end", label: "Actual finish", type: "date", span: "half" },
 ];
@@ -216,6 +222,7 @@ function ProjectDetail() {
   const [openWbs, setOpenWbs] = useState<Record<string, boolean>>({});
   const [openActivity, setOpenActivity] = useState<Record<string, boolean>>({});
   const [openMilestones, setOpenMilestones] = useState<Record<string, boolean>>({});
+  const [openSprint, setOpenSprint] = useState<Record<string, boolean>>({});
 
   const toggle = (
     setter: React.Dispatch<React.SetStateAction<Record<string, boolean>>>,
@@ -268,8 +275,11 @@ function ProjectDetail() {
     status: (values.status || "not_started") as never,
     duration_days: values.duration_days ? Number(values.duration_days) : 0,
     progress_pct: values.progress_pct ? Number(values.progress_pct) : 0,
-    planned_start: values.planned_start || null,
-    planned_end: values.planned_end || null,
+    ...derivePlannedDates({
+      planned_start: values.planned_start || null,
+      planned_end: values.planned_end || null,
+      duration_days: values.duration_days ? Number(values.duration_days) : 0,
+    }),
     actual_start: values.actual_start || null,
     actual_end: values.actual_end || null,
   });
@@ -405,6 +415,43 @@ function ProjectDetail() {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const removeWbs = useMutation({
+    mutationFn: (id: string) => deleteWbs(id),
+    onSuccess: () => {
+      toast.success("WBS element deleted");
+      refresh();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const removeActivity = useMutation({
+    mutationFn: (id: string) => deleteActivity(id),
+    onSuccess: () => {
+      toast.success("Activity deleted");
+      refresh();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const removeMilestone = useMutation({
+    mutationFn: (id: string) => deleteMilestone(id),
+    onSuccess: () => {
+      toast.success("Milestone deleted");
+      refresh();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const removeSprint = useMutation({
+    mutationFn: (id: string) => deleteSprint(id),
+    onSuccess: () => {
+      toast.success("Sprint deleted");
+      queryClient.invalidateQueries({ queryKey: ["sprints", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["traceability", projectId] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   const wbsList = hierarchy.data ?? [];
   const rolled = projectSpan(project.data ?? null, wbsList);
   const sprintList = sprints.data ?? [];
@@ -507,14 +554,14 @@ function ProjectDetail() {
             ) : (
               wbsList.map((wbs) => {
                 const wbsDates = wbsSpan(wbs);
-                const wbsExpanded = openWbs[wbs.id] ?? true;
+                const wbsExpanded = openWbs[wbs.id] ?? false;
                 return (
                   <article key={wbs.id} className="rounded-lg border border-border bg-card p-5">
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div className="flex gap-2">
                         <ExpandButton
                           expanded={wbsExpanded}
-                          onToggle={() => toggle(setOpenWbs, wbs.id, true)}
+                          onToggle={() => toggle(setOpenWbs, wbs.id, false)}
                           label={`WBS ${wbs.code}`}
                         />
                         <Layers className="mt-1.5 size-4 text-level-wbs" />
@@ -565,15 +612,15 @@ function ProjectDetail() {
                         ) : (
                           wbs.activities.map((activity) => {
                             const actDates = activitySpan(activity);
-                            const actExpanded = openActivity[activity.id] ?? true;
-                            const msExpanded = openMilestones[activity.id] ?? true;
+                            const actExpanded = openActivity[activity.id] ?? false;
+                            const msExpanded = openMilestones[activity.id] ?? false;
                             return (
                               <div key={activity.id} className="rounded-md bg-surface-raised p-4">
                                 <div className="flex flex-wrap items-start justify-between gap-3">
                                   <div className="flex gap-2">
                                     <ExpandButton
                                       expanded={actExpanded}
-                                      onToggle={() => toggle(setOpenActivity, activity.id, true)}
+                                      onToggle={() => toggle(setOpenActivity, activity.id, false)}
                                       label={`activity ${activity.code}`}
                                     />
                                     <div>
@@ -631,7 +678,7 @@ function ProjectDetail() {
                                     <div className="mt-3 flex items-center gap-1">
                                       <ExpandButton
                                         expanded={msExpanded}
-                                        onToggle={() => toggle(setOpenMilestones, activity.id, true)}
+                                        onToggle={() => toggle(setOpenMilestones, activity.id, false)}
                                         label={`milestones of ${activity.code}`}
                                       />
                                       <span className="text-xs uppercase tracking-wide text-muted-foreground">
