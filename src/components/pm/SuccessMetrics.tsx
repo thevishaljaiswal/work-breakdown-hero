@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/pm/StatusBadge";
 import { RecordDialog, type FieldSpec } from "@/components/pm/RecordDialog";
 import { DeleteButton } from "@/components/pm/DeleteButton";
 import { STATUS_OPTIONS, deleteSuccessMetric, fetchSuccessMetrics, statusLabel } from "@/lib/pm";
@@ -165,9 +166,7 @@ export function SuccessMetrics({ projectId }: { projectId: string }) {
                 <p className="uppercase tracking-wide text-muted-foreground">Actual</p>
                 <p className="mt-0.5 font-medium">{metric.actual || "—"}</p>
               </div>
-              <Badge variant="secondary" className="text-[10px]">
-                {statusLabel(metric.status)}
-              </Badge>
+              <StatusBadge status={metric.status} />
               <div className="flex items-center gap-1">
                 <RecordDialog
                   title={`Edit ${metric.kpi}`}

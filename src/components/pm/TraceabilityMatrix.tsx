@@ -4,6 +4,7 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/pm/StatusBadge";
 import { RecordDialog, type FieldSpec } from "@/components/pm/RecordDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { DeleteButton } from "@/components/pm/DeleteButton";
@@ -144,9 +145,7 @@ export function TraceabilityMatrix({ projectId }: { projectId: string }) {
                 )}
               </td>
               <td className="p-3">
-                <Badge variant="secondary" className="text-[10px]">
-                  {statusLabel(row.status)}
-                </Badge>
+                <StatusBadge status={row.status} />
               </td>
               <td className="p-3 text-right">
                 <div className="flex items-center justify-end gap-1">

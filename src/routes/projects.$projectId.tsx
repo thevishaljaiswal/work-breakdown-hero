@@ -11,6 +11,7 @@ import {
   Plus,
   Layers,
   Rocket,
+  Code2,
   Table2,
   Target,
 } from "lucide-react";
@@ -20,10 +21,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { StatusBadge } from "@/components/pm/StatusBadge";
 import { RecordDialog, type FieldSpec } from "@/components/pm/RecordDialog";
 import { SprintBacklog } from "@/components/pm/SprintBacklog";
 import { TraceabilityMatrix } from "@/components/pm/TraceabilityMatrix";
 import { SuccessMetrics } from "@/components/pm/SuccessMetrics";
+import { DevObjects } from "@/components/pm/DevObjects";
 import { DeleteButton } from "@/components/pm/DeleteButton";
 import {
   PRIORITY_OPTIONS,
@@ -513,6 +516,9 @@ function ProjectDetail() {
           <TabsTrigger value="sprints" className="gap-2">
             <Rocket className="size-4" /> Sprint planning
           </TabsTrigger>
+          <TabsTrigger value="dev" className="gap-2">
+            <Code2 className="size-4" /> Development objects
+          </TabsTrigger>
           <TabsTrigger value="rtm" className="gap-2">
             <Table2 className="size-4" /> Traceability matrix
           </TabsTrigger>
@@ -573,9 +579,7 @@ function ProjectDetail() {
                         <span className="text-xs text-muted-foreground">
                           {wbs.activities.length} activities
                         </span>
-                        <Badge variant="secondary" className="text-[10px]">
-                          {statusLabel(wbs.status)}
-                        </Badge>
+                        <StatusBadge status={wbs.status} />
                         <div className="flex items-center gap-1">
                           <RecordDialog
                             title={`Edit WBS ${wbs.code}`}
@@ -648,9 +652,7 @@ function ProjectDetail() {
                                       <span className="text-xs text-muted-foreground">
                                         {activity.duration_days} d · {activity.progress_pct}%
                                       </span>
-                                      <Badge variant="secondary" className="text-[10px]">
-                                        {statusLabel(activity.status)}
-                                      </Badge>
+                                      <StatusBadge status={activity.status} />
                                       <div className="flex items-center gap-1">
                                         <RecordDialog
                                           title={`Edit activity ${activity.code}`}
@@ -739,9 +741,7 @@ function ProjectDetail() {
                                                   <span className="text-xs text-muted-foreground">
                                                     {formatDate(milestone.actual_date ?? milestone.due_date)}
                                                   </span>
-                                                  <Badge variant="secondary" className="text-[10px]">
-                                                    {statusLabel(milestone.status)}
-                                                  </Badge>
+                                                  <StatusBadge status={milestone.status} />
                                                   <div className="flex items-center gap-1">
                                                     <RecordDialog
                                                       title={`Edit ${milestone.name}`}
@@ -829,9 +829,7 @@ function ProjectDetail() {
                         <span className="text-xs text-muted-foreground">
                           {formatDate(sprint.start_date)} → {formatDate(sprint.end_date)}
                         </span>
-                        <Badge variant="secondary" className="text-[10px]">
-                          {statusLabel(sprint.status)}
-                        </Badge>
+                        <StatusBadge status={sprint.status} />
                         <div className="flex items-center gap-1">
                           <RecordDialog
                             title={`Edit ${sprint.name}`}
@@ -870,6 +868,10 @@ function ProjectDetail() {
             )}
           </div>
 
+        </TabsContent>
+
+        <TabsContent value="dev" className="mt-6">
+          <DevObjects projectId={projectId} />
         </TabsContent>
 
         <TabsContent value="rtm" className="mt-6">

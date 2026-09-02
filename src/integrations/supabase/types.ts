@@ -86,6 +86,99 @@ export type Database = {
           },
         ]
       }
+      dev_objects: {
+        Row: {
+          actual_end: string | null
+          actual_hours: number
+          complexity: string
+          created_at: string
+          description: string | null
+          developer: string | null
+          estimate_hours: number
+          id: string
+          module: string | null
+          name: string
+          object_code: string
+          object_type: string
+          planned_end: string | null
+          planned_start: string | null
+          priority: Database["public"]["Enums"]["priority_level"]
+          reviewer: string | null
+          sort_order: number
+          sprint_id: string
+          status: Database["public"]["Enums"]["work_status"]
+          technical_spec: string | null
+          transport_request: string | null
+          updated_at: string
+          user_story_id: string | null
+        }
+        Insert: {
+          actual_end?: string | null
+          actual_hours?: number
+          complexity?: string
+          created_at?: string
+          description?: string | null
+          developer?: string | null
+          estimate_hours?: number
+          id?: string
+          module?: string | null
+          name: string
+          object_code: string
+          object_type?: string
+          planned_end?: string | null
+          planned_start?: string | null
+          priority?: Database["public"]["Enums"]["priority_level"]
+          reviewer?: string | null
+          sort_order?: number
+          sprint_id: string
+          status?: Database["public"]["Enums"]["work_status"]
+          technical_spec?: string | null
+          transport_request?: string | null
+          updated_at?: string
+          user_story_id?: string | null
+        }
+        Update: {
+          actual_end?: string | null
+          actual_hours?: number
+          complexity?: string
+          created_at?: string
+          description?: string | null
+          developer?: string | null
+          estimate_hours?: number
+          id?: string
+          module?: string | null
+          name?: string
+          object_code?: string
+          object_type?: string
+          planned_end?: string | null
+          planned_start?: string | null
+          priority?: Database["public"]["Enums"]["priority_level"]
+          reviewer?: string | null
+          sort_order?: number
+          sprint_id?: string
+          status?: Database["public"]["Enums"]["work_status"]
+          technical_spec?: string | null
+          transport_request?: string | null
+          updated_at?: string
+          user_story_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dev_objects_sprint_id_fkey"
+            columns: ["sprint_id"]
+            isOneToOne: false
+            referencedRelation: "sprints"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dev_objects_user_story_id_fkey"
+            columns: ["user_story_id"]
+            isOneToOne: false
+            referencedRelation: "user_stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       milestones: {
         Row: {
           activity_id: string
@@ -583,12 +676,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -612,11 +705,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -637,11 +730,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -662,11 +755,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -679,11 +772,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
