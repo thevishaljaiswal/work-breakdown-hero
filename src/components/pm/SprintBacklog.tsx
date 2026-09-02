@@ -93,7 +93,6 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
           acceptance_criteria: values.acceptance_criteria || null,
           requirement_id: values.requirement_id || null,
           backlog_item: values.backlog_item || null,
-        requirement_id: values.requirement_id || null,
           assignee: values.assignee || null,
           story_points: values.story_points ? Number(values.story_points) : 0,
           status: (values.status || "not_started") as never,
