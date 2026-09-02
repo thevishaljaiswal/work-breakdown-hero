@@ -124,6 +124,79 @@ export async function fetchSprintBacklog(sprintId: string): Promise<UserStoryNod
   return stories.map((s) => ({ ...s, tasks: tasks.filter((t) => t.user_story_id === s.id) }));
 }
 
+export async function fetchSuccessMetrics(projectId: string) {
+  const { data, error } = await supabase
+    .from("success_metrics")
+    .select("*")
+    .eq("project_id", projectId)
+    .order("sort_order")
+    .order("created_at");
+  if (error) throw error;
+  return data;
+}
+
+export function priorityLabel(value: string) {
+  return PRIORITY_OPTIONS.find((p) => p.value === value)?.label ?? value;
+}
+
+export async function fetchTraceability(projectId: string): Promise<TraceabilityRow[]> {
+  const sprints = await fetchSprints(projectId);
+  if (!sprints.length) return [];
+
+  const { data: stories, error } = await supabase
+    .from("user_stories")
+    .select("*")
+    .in("sprint_id", sprints.map((s) => s.id))
+    .order("story_code");
+  if (error) throw error;
+  if (!stories.length) return [];
+
+  const { data: cases, error: caseError } = await supabase
+    .from("story_tasks")
+    .select("*")
+    .in("user_story_id", stories.map((s) => s.id))
+    .order("sort_order")
+    .order("created_at");
+  if (caseError) throw caseError;
+
+  const sprintName = new Map(sprints.map((s) => [s.id, s.name]));
+  const rows: TraceabilityRow[] = [];
+
+  for (const story of stories) {
+    const storyCases = cases.filter((c) => c.user_story_id === story.id);
+    const base = {
+      requirement_id: story.requirement_id || story.story_code,
+      story_code: story.story_code,
+      story: story.story,
+      acceptance_criteria: story.acceptance_criteria,
+      sprint_name: sprintName.get(story.sprint_id) ?? "—",
+    };
+    if (!storyCases.length) {
+      rows.push({
+        ...base,
+        id: story.id,
+        test_case_id: "—",
+        test_scenario: null,
+        priority: "—",
+        status: story.status,
+      });
+      continue;
+    }
+    for (const testCase of storyCases) {
+      rows.push({
+        ...base,
+        id: testCase.id,
+        test_case_id: testCase.test_case_id || "—",
+        test_scenario: testCase.test_scenario || testCase.task,
+        priority: testCase.priority,
+        status: testCase.status,
+      });
+    }
+  }
+
+  return rows;
+}
+
 export async function fetchHierarchy(projectId: string): Promise<WbsNode[]> {
   const { data: wbs, error: wbsError } = await supabase
     .from("wbs_items")
