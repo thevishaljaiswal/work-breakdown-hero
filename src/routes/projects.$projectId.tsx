@@ -446,10 +446,10 @@ function ProjectDetail() {
 
       <Tabs defaultValue="wbs" className="mt-8">
         <TabsList>
-          <TabsTrigger value="wbs">
+          <TabsTrigger value="wbs" className="gap-2">
             <ListTree className="size-4" /> WBS structure
           </TabsTrigger>
-          <TabsTrigger value="sprints">
+          <TabsTrigger value="sprints" className="gap-2">
             <Rocket className="size-4" /> Sprint planning
           </TabsTrigger>
         </TabsList>
