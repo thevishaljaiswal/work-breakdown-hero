@@ -135,58 +135,56 @@ function ProjectsPage() {
       {projects.isLoading ? (
         <p className="py-16 text-center text-sm text-muted-foreground">Loading projects…</p>
       ) : projects.data?.length ? (
-        <ul className="mt-8 grid gap-4 md:grid-cols-2">
+        <ul className="mt-8 divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
           {projects.data.map((project) => {
             const rollup = rollups.data?.find((r) => r.project_id === project.id);
             return (
-              <li key={project.id} className="relative">
-                <div className="absolute right-4 top-4 z-10">
-                  <RecordDialog
-                    title={`Edit ${project.code}`}
-                    description="Update this project's details."
-                    fields={PROJECT_FIELDS}
-                    submitLabel="Save changes"
-                    initialValues={project}
-                    onSubmit={(values) => updateProject.mutateAsync({ id: project.id, values })}
-                    trigger={
-                      <Button variant="ghost" size="icon" aria-label={`Edit ${project.name}`}>
-                        <Pencil className="size-4" />
-                      </Button>
-                    }
-                  />
-                </div>
+              <li
+                key={project.id}
+                className="flex flex-wrap items-center gap-4 px-5 py-4 transition-colors hover:bg-muted/40"
+              >
                 <Link
                   to="/projects/$projectId"
                   params={{ projectId: project.id }}
-                  className="group block h-full rounded-lg border border-border bg-card p-6 transition-colors hover:border-primary"
+                  className="group flex min-w-0 flex-1 flex-wrap items-center gap-4"
                 >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="font-mono text-xs text-accent">{project.code}</p>
-                      <h2 className="mt-1 text-lg font-semibold">{project.name}</h2>
-                    </div>
-                    <Badge variant="secondary" className="mr-10">
-                      {statusLabel(project.status)}
-                    </Badge>
+                  <div className="min-w-[220px] flex-1">
+                    <p className="font-mono text-xs text-accent">{project.code}</p>
+                    <h2 className="mt-0.5 truncate text-base font-semibold">{project.name}</h2>
+                    {project.description ? (
+                      <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+                        {project.description}
+                      </p>
+                    ) : null}
                   </div>
-                  {project.description ? (
-                    <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">{project.description}</p>
-                  ) : null}
-                  <dl className="mt-5 grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <dt className="text-xs uppercase tracking-wide text-muted-foreground">Rolled-up start</dt>
-                      <dd className="mt-1 font-medium">{formatDate(rollup?.rollup_start)}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs uppercase tracking-wide text-muted-foreground">Rolled-up finish</dt>
-                      <dd className="mt-1 font-medium">{formatDate(rollup?.rollup_end)}</dd>
-                    </div>
-                  </dl>
-                  <p className="mt-5 flex items-center gap-2 text-sm font-medium text-primary">
-                    {rollup?.wbs_count ?? 0} WBS elements
-                    <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
-                  </p>
+                  <div className="w-28 text-xs">
+                    <p className="uppercase tracking-wide text-muted-foreground">Start</p>
+                    <p className="mt-0.5 font-medium">{formatDate(rollup?.rollup_start)}</p>
+                  </div>
+                  <div className="w-28 text-xs">
+                    <p className="uppercase tracking-wide text-muted-foreground">Finish</p>
+                    <p className="mt-0.5 font-medium">{formatDate(rollup?.rollup_end)}</p>
+                  </div>
+                  <div className="w-24 text-xs">
+                    <p className="uppercase tracking-wide text-muted-foreground">WBS</p>
+                    <p className="mt-0.5 font-medium">{rollup?.wbs_count ?? 0}</p>
+                  </div>
+                  <Badge variant="secondary">{statusLabel(project.status)}</Badge>
+                  <ArrowRight className="size-4 text-primary transition-transform group-hover:translate-x-1" />
                 </Link>
+                <RecordDialog
+                  title={`Edit ${project.code}`}
+                  description="Update this project's details."
+                  fields={PROJECT_FIELDS}
+                  submitLabel="Save changes"
+                  initialValues={project}
+                  onSubmit={(values) => updateProject.mutateAsync({ id: project.id, values })}
+                  trigger={
+                    <Button variant="ghost" size="icon" aria-label={`Edit ${project.name}`}>
+                      <Pencil className="size-4" />
+                    </Button>
+                  }
+                />
               </li>
             );
           })}
