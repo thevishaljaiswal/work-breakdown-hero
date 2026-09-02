@@ -31,7 +31,7 @@ export type FieldSpec = {
   span?: "full" | "half";
 };
 
-type RecordValue = string | number | boolean | null | undefined;
+type RecordValue = unknown;
 
 type Props = {
   title: string;
