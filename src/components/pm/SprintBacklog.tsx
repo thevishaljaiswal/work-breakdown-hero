@@ -37,7 +37,10 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
     queryFn: () => fetchSprintBacklog(sprintId),
   });
 
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ["sprint-backlog", sprintId] });
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["sprint-backlog", sprintId] });
+    queryClient.invalidateQueries({ queryKey: ["traceability"] });
+  };
 
   const addStory = useMutation({
     mutationFn: async (values: Record<string, string>) => {
@@ -172,6 +175,11 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-mono text-xs text-primary">{story.story_code}</span>
+                    {story.requirement_id ? (
+                      <Badge variant="outline" className="text-xs">
+                        {story.requirement_id}
+                      </Badge>
+                    ) : null}
                     {story.backlog_item ? (
                       <Badge variant="outline" className="text-xs">
                         {story.backlog_item}
