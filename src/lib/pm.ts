@@ -50,6 +50,104 @@ export function formatDate(value?: string | null) {
   });
 }
 
+function shiftDate(value: string, days: number) {
+  const date = new Date(`${value}T00:00:00`);
+  date.setDate(date.getDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+/**
+ * Planned dates for an activity derived from its duration in days.
+ * Duration is inclusive: a 5-day activity starting on the 1st finishes on the 5th.
+ */
+export function derivePlannedDates(input: {
+  planned_start?: string | null;
+  planned_end?: string | null;
+  duration_days?: number | null;
+}) {
+  const duration = Number(input.duration_days ?? 0);
+  const start = input.planned_start || null;
+  const end = input.planned_end || null;
+  if (duration > 0 && start) return { planned_start: start, planned_end: shiftDate(start, duration - 1) };
+  if (duration > 0 && end) return { planned_start: shiftDate(end, -(duration - 1)), planned_end: end };
+  return { planned_start: start, planned_end: end };
+}
+
+/** Cascading deletes — child rows are removed first so foreign keys stay valid. */
+export async function deleteMilestone(id: string) {
+  const { error } = await supabase.from("milestones").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteActivity(id: string) {
+  const { error: msError } = await supabase.from("milestones").delete().eq("activity_id", id);
+  if (msError) throw msError;
+  const { error } = await supabase.from("activities").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteWbs(id: string) {
+  const { data: activities, error: actError } = await supabase
+    .from("activities")
+    .select("id")
+    .eq("wbs_id", id);
+  if (actError) throw actError;
+  for (const activity of activities ?? []) await deleteActivity(activity.id);
+  const { error } = await supabase.from("wbs_items").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteTestCase(id: string) {
+  const { error } = await supabase.from("story_tasks").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteUserStory(id: string) {
+  const { error: taskError } = await supabase.from("story_tasks").delete().eq("user_story_id", id);
+  if (taskError) throw taskError;
+  const { error } = await supabase.from("user_stories").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteSprint(id: string) {
+  const { data: stories, error: storyError } = await supabase
+    .from("user_stories")
+    .select("id")
+    .eq("sprint_id", id);
+  if (storyError) throw storyError;
+  for (const story of stories ?? []) await deleteUserStory(story.id);
+  const { error } = await supabase.from("sprints").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteSuccessMetric(id: string) {
+  const { error } = await supabase.from("success_metrics").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteProject(id: string) {
+  const { data: wbs, error: wbsError } = await supabase
+    .from("wbs_items")
+    .select("id")
+    .eq("project_id", id);
+  if (wbsError) throw wbsError;
+  for (const item of wbs ?? []) await deleteWbs(item.id);
+
+  const { data: sprints, error: sprintError } = await supabase
+    .from("sprints")
+    .select("id")
+    .eq("project_id", id);
+  if (sprintError) throw sprintError;
+  for (const sprint of sprints ?? []) await deleteSprint(sprint.id);
+
+  const { error: metricError } = await supabase.from("success_metrics").delete().eq("project_id", id);
+  if (metricError) throw metricError;
+
+  const { error } = await supabase.from("projects").delete().eq("id", id);
+  if (error) throw error;
+}
+
+
 export function statusLabel(value: string) {
   return STATUS_OPTIONS.find((s) => s.value === value)?.label ?? value;
 }

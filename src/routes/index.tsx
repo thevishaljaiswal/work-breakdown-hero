@@ -7,9 +7,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RecordDialog, type FieldSpec } from "@/components/pm/RecordDialog";
+import { DeleteButton } from "@/components/pm/DeleteButton";
 import {
   PRIORITY_OPTIONS,
   STATUS_OPTIONS,
+  deleteProject,
   fetchProjectRollups,
   fetchProjects,
   formatDate,
@@ -107,6 +109,16 @@ function ProjectsPage() {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const removeProject = useMutation({
+    mutationFn: (id: string) => deleteProject(id),
+    onSuccess: () => {
+      toast.success("Project deleted");
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["project-rollups"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   return (
     <main className="mx-auto w-full max-w-6xl px-6 py-12">
       <header className="flex flex-wrap items-end justify-between gap-6 border-b border-border pb-8">
@@ -184,6 +196,11 @@ function ProjectsPage() {
                       <Pencil className="size-4" />
                     </Button>
                   }
+                />
+                <DeleteButton
+                  label={project.name}
+                  cascadeNote="WBS, activities, milestones, sprints and KPIs"
+                  onConfirm={() => removeProject.mutateAsync(project.id)}
                 />
               </li>
             );

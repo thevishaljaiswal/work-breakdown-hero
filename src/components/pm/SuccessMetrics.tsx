@@ -6,7 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RecordDialog, type FieldSpec } from "@/components/pm/RecordDialog";
-import { STATUS_OPTIONS, fetchSuccessMetrics, statusLabel } from "@/lib/pm";
+import { DeleteButton } from "@/components/pm/DeleteButton";
+import { STATUS_OPTIONS, deleteSuccessMetric, fetchSuccessMetrics, statusLabel } from "@/lib/pm";
 
 const metricFields: FieldSpec[] = [
   { name: "kpi", label: "KPI", type: "text", required: true, placeholder: "Bill creation time", span: "half" },
@@ -69,6 +70,15 @@ export function SuccessMetrics({ projectId }: { projectId: string }) {
     },
     onSuccess: () => {
       toast.success("KPI updated");
+      refresh();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const removeMetric = useMutation({
+    mutationFn: (id: string) => deleteSuccessMetric(id),
+    onSuccess: () => {
+      toast.success("KPI deleted");
       refresh();
     },
     onError: (error: Error) => toast.error(error.message),
@@ -138,21 +148,27 @@ export function SuccessMetrics({ projectId }: { projectId: string }) {
           </p>
         </div>
       ) : (
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <ul className="mt-4 divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
           {list.map((metric) => (
-            <article key={metric.id} className="rounded-lg border border-border bg-card p-4">
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  {metric.category ? (
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                      {metric.category}
-                    </p>
-                  ) : null}
-                  <h3 className="mt-0.5 font-medium">{metric.kpi}</h3>
-                  <p className="mt-1 text-2xl font-semibold tracking-tight text-primary">
-                    {metric.target}
-                  </p>
-                </div>
+            <li key={metric.id} className="flex flex-wrap items-center gap-4 px-4 py-3">
+              <div className="min-w-[220px] flex-1">
+                <p className="text-sm font-medium">{metric.kpi}</p>
+                <p className="text-xs text-muted-foreground">
+                  {metric.category || "Uncategorised"} · Owner: {metric.owner || "—"}
+                </p>
+              </div>
+              <div className="w-32 text-xs">
+                <p className="uppercase tracking-wide text-muted-foreground">Target</p>
+                <p className="mt-0.5 font-semibold text-primary">{metric.target}</p>
+              </div>
+              <div className="w-32 text-xs">
+                <p className="uppercase tracking-wide text-muted-foreground">Actual</p>
+                <p className="mt-0.5 font-medium">{metric.actual || "—"}</p>
+              </div>
+              <Badge variant="secondary" className="text-[10px]">
+                {statusLabel(metric.status)}
+              </Badge>
+              <div className="flex items-center gap-1">
                 <RecordDialog
                   title={`Edit ${metric.kpi}`}
                   fields={metricFields}
@@ -165,17 +181,11 @@ export function SuccessMetrics({ projectId }: { projectId: string }) {
                     </Button>
                   }
                 />
+                <DeleteButton label={metric.kpi} onConfirm={() => removeMetric.mutateAsync(metric.id)} />
               </div>
-              <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3 text-xs text-muted-foreground">
-                <Badge variant="secondary" className="text-[10px]">
-                  {statusLabel(metric.status)}
-                </Badge>
-                <span>Actual: {metric.actual || "—"}</span>
-                <span>· Owner: {metric.owner || "—"}</span>
-              </div>
-            </article>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );
