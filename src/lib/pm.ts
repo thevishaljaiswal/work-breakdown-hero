@@ -13,6 +13,8 @@ export type SuccessMetric = Tables<"success_metrics">;
 
 export type TraceabilityRow = {
   id: string;
+  story_id: string;
+  task_id: string | null;
   requirement_id: string;
   story_code: string;
   story: string;
@@ -175,6 +177,8 @@ export async function fetchTraceability(projectId: string): Promise<Traceability
       rows.push({
         ...base,
         id: story.id,
+        story_id: story.id,
+        task_id: null,
         test_case_id: "—",
         test_scenario: null,
         priority: "—",
@@ -186,6 +190,8 @@ export async function fetchTraceability(projectId: string): Promise<Traceability
       rows.push({
         ...base,
         id: testCase.id,
+        story_id: story.id,
+        task_id: testCase.id,
         test_case_id: testCase.test_case_id || "—",
         test_scenario: testCase.test_scenario || testCase.task,
         priority: testCase.priority,
