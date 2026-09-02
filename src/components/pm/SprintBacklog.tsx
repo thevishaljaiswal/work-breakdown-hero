@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -75,6 +75,50 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const updateStory = useMutation({
+    mutationFn: async ({ id, values }: { id: string; values: Record<string, string> }) => {
+      const { error } = await supabase
+        .from("user_stories")
+        .update({
+          story_code: values.story_code,
+          story: values.story,
+          acceptance_criteria: values.acceptance_criteria || null,
+          backlog_item: values.backlog_item || null,
+          assignee: values.assignee || null,
+          story_points: values.story_points ? Number(values.story_points) : 0,
+          status: (values.status || "not_started") as never,
+        })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("User story updated");
+      refresh();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const updateTask = useMutation({
+    mutationFn: async ({ id, values }: { id: string; values: Record<string, string> }) => {
+      const { error } = await supabase
+        .from("story_tasks")
+        .update({
+          task: values.task,
+          assignee: values.assignee || null,
+          estimate_hours: values.estimate_hours ? Number(values.estimate_hours) : 0,
+          acceptance_criteria: values.acceptance_criteria || null,
+          status: (values.status || "not_started") as never,
+        })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Task updated");
+      refresh();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   const stories = backlog.data ?? [];
   const totalPoints = stories.reduce((sum, s) => sum + (s.story_points ?? 0), 0);
   const totalHours = stories.reduce(
@@ -140,6 +184,19 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
                     Assignee: {story.assignee || "—"} · {story.story_points} story points
                   </p>
                 </div>
+                <div className="flex items-center gap-1">
+                <RecordDialog
+                  title={`Edit ${story.story_code}`}
+                  fields={storyFields}
+                  submitLabel="Save changes"
+                  initialValues={story}
+                  onSubmit={(values) => updateStory.mutateAsync({ id: story.id, values })}
+                  trigger={
+                    <Button variant="ghost" size="icon" aria-label={`Edit ${story.story_code}`} className="size-8">
+                      <Pencil className="size-4" />
+                    </Button>
+                  }
+                />
                 <RecordDialog
                   title={`New task in ${story.story_code}`}
                   fields={taskFields}
@@ -151,6 +208,7 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
                     </Button>
                   }
                 />
+                </div>
               </div>
 
               {story.tasks.length > 0 ? (
@@ -162,7 +220,8 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
                         <th className="pb-2 pr-3 font-medium">Assignee</th>
                         <th className="pb-2 pr-3 font-medium">Est. (h)</th>
                         <th className="pb-2 pr-3 font-medium">Status</th>
-                        <th className="pb-2 font-medium">Acceptance criteria</th>
+                        <th className="pb-2 pr-3 font-medium">Acceptance criteria</th>
+                        <th className="pb-2 font-medium sr-only">Edit</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -172,8 +231,22 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
                           <td className="py-2 pr-3 text-muted-foreground">{task.assignee || "—"}</td>
                           <td className="py-2 pr-3 text-muted-foreground">{Number(task.estimate_hours)}</td>
                           <td className="py-2 pr-3 text-muted-foreground">{statusLabel(task.status)}</td>
-                          <td className="py-2 whitespace-pre-line text-muted-foreground">
+                          <td className="py-2 pr-3 whitespace-pre-line text-muted-foreground">
                             {task.acceptance_criteria || "—"}
+                          </td>
+                          <td className="py-2 text-right">
+                            <RecordDialog
+                              title={`Edit task`}
+                              fields={taskFields}
+                              submitLabel="Save changes"
+                              initialValues={task}
+                              onSubmit={(values) => updateTask.mutateAsync({ id: task.id, values })}
+                              trigger={
+                                <Button variant="ghost" size="icon" aria-label="Edit task" className="size-8">
+                                  <Pencil className="size-4" />
+                                </Button>
+                              }
+                            />
                           </td>
                         </tr>
                       ))}
