@@ -187,13 +187,23 @@ function ExpandButton({
   );
 }
 
-function EditButton({ label }: { label: string }) {
+const EditButton = forwardRef<
+  HTMLButtonElement,
+  React.ComponentPropsWithoutRef<typeof Button> & { label: string }
+>(function EditButton({ label, ...props }, ref) {
   return (
-    <Button variant="ghost" size="icon" aria-label={`Edit ${label}`} className="size-8">
+    <Button
+      ref={ref}
+      variant="ghost"
+      size="icon"
+      aria-label={`Edit ${label}`}
+      className="size-8"
+      {...props}
+    >
       <Pencil className="size-4" />
     </Button>
   );
-}
+});
 
 function ProjectDetail() {
   const { projectId } = Route.useParams();
