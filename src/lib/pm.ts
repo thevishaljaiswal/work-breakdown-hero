@@ -79,15 +79,31 @@ export function formatDate(value?: string | null) {
   });
 }
 
-function shiftDate(value: string, days: number) {
-  const date = new Date(`${value}T00:00:00`);
-  date.setDate(date.getDate() + days);
+function isWeekend(date: Date) {
+  const day = date.getDay();
+  return day === 0 || day === 6;
+}
+
+/** Next working day at or after the given date. */
+function nextWorkday(date: Date, direction: 1 | -1) {
+  while (isWeekend(date)) date.setDate(date.getDate() + direction);
+  return date;
+}
+
+/** Adds (duration - 1) working days, skipping Saturdays and Sundays. */
+function shiftWorkdays(value: string, duration: number, direction: 1 | -1) {
+  const date = nextWorkday(new Date(`${value}T00:00:00`), direction);
+  let remaining = duration - 1;
+  while (remaining > 0) {
+    date.setDate(date.getDate() + direction);
+    if (!isWeekend(date)) remaining -= 1;
+  }
   return date.toISOString().slice(0, 10);
 }
 
 /**
- * Planned dates for an activity derived from its duration in days.
- * Duration is inclusive: a 5-day activity starting on the 1st finishes on the 5th.
+ * Planned dates for an activity derived from its duration in working days.
+ * Duration is inclusive and skips weekends: a 5-day activity starting Monday finishes Friday.
  */
 export function derivePlannedDates(input: {
   planned_start?: string | null;
@@ -97,10 +113,13 @@ export function derivePlannedDates(input: {
   const duration = Number(input.duration_days ?? 0);
   const start = input.planned_start || null;
   const end = input.planned_end || null;
-  if (duration > 0 && start) return { planned_start: start, planned_end: shiftDate(start, duration - 1) };
-  if (duration > 0 && end) return { planned_start: shiftDate(end, -(duration - 1)), planned_end: end };
+  if (duration > 0 && start)
+    return { planned_start: shiftWorkdays(start, 1, 1), planned_end: shiftWorkdays(start, duration, 1) };
+  if (duration > 0 && end)
+    return { planned_start: shiftWorkdays(end, duration, -1), planned_end: shiftWorkdays(end, 1, -1) };
   return { planned_start: start, planned_end: end };
 }
+
 
 /** Cascading deletes — child rows are removed first so foreign keys stay valid. */
 export async function deleteMilestone(id: string) {
