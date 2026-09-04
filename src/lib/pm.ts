@@ -8,7 +8,8 @@ export type Milestone = Tables<"milestones">;
 export type Sprint = Tables<"sprints">;
 export type UserStory = Tables<"user_stories">;
 export type StoryTask = Tables<"story_tasks">;
-export type UserStoryNode = UserStory & { tasks: StoryTask[] };
+export type StoryRequirement = Tables<"story_requirements">;
+export type UserStoryNode = UserStory & { tasks: StoryTask[]; requirements: StoryRequirement[] };
 export type SuccessMetric = Tables<"success_metrics">;
 export type DevObject = Tables<"dev_objects">;
 
@@ -44,6 +45,7 @@ export type TraceabilityRow = {
   id: string;
   story_id: string;
   task_id: string | null;
+  requirement_row_id: string | null;
   requirement_id: string;
   story_code: string;
   story: string;
@@ -150,9 +152,19 @@ export async function deleteTestCase(id: string) {
   if (error) throw error;
 }
 
+export async function deleteRequirement(id: string) {
+  const { error } = await supabase.from("story_requirements").delete().eq("id", id);
+  if (error) throw error;
+}
+
 export async function deleteUserStory(id: string) {
   const { error: taskError } = await supabase.from("story_tasks").delete().eq("user_story_id", id);
   if (taskError) throw taskError;
+  const { error: reqError } = await supabase
+    .from("story_requirements")
+    .delete()
+    .eq("user_story_id", id);
+  if (reqError) throw reqError;
   const { error } = await supabase.from("user_stories").delete().eq("id", id);
   if (error) throw error;
 }
@@ -286,7 +298,19 @@ export async function fetchSprintBacklog(sprintId: string): Promise<UserStoryNod
     .order("created_at");
   if (taskError) throw taskError;
 
-  return stories.map((s) => ({ ...s, tasks: tasks.filter((t) => t.user_story_id === s.id) }));
+  const { data: requirements, error: reqError } = await supabase
+    .from("story_requirements")
+    .select("*")
+    .in("user_story_id", stories.map((s) => s.id))
+    .order("sort_order")
+    .order("requirement_id");
+  if (reqError) throw reqError;
+
+  return stories.map((s) => ({
+    ...s,
+    tasks: tasks.filter((t) => t.user_story_id === s.id),
+    requirements: requirements.filter((r) => r.user_story_id === s.id),
+  }));
 }
 
 export async function fetchSuccessMetrics(projectId: string) {
@@ -324,42 +348,57 @@ export async function fetchTraceability(projectId: string): Promise<Traceability
     .order("created_at");
   if (caseError) throw caseError;
 
+  const { data: requirements, error: reqError } = await supabase
+    .from("story_requirements")
+    .select("*")
+    .in("user_story_id", stories.map((s) => s.id))
+    .order("sort_order")
+    .order("requirement_id");
+  if (reqError) throw reqError;
+
   const sprintName = new Map(sprints.map((s) => [s.id, s.name]));
   const rows: TraceabilityRow[] = [];
 
   for (const story of stories) {
     const storyCases = cases.filter((c) => c.user_story_id === story.id);
-    const base = {
-      requirement_id: story.requirement_id || story.story_code,
-      story_code: story.story_code,
-      story: story.story,
-      acceptance_criteria: story.acceptance_criteria,
-      sprint_name: sprintName.get(story.sprint_id) ?? "—",
-    };
-    if (!storyCases.length) {
-      rows.push({
-        ...base,
-        id: story.id,
-        story_id: story.id,
-        task_id: null,
-        test_case_id: "—",
-        test_scenario: null,
-        priority: "—",
-        status: story.status,
-      });
-      continue;
-    }
-    for (const testCase of storyCases) {
-      rows.push({
-        ...base,
-        id: testCase.id,
-        story_id: story.id,
-        task_id: testCase.id,
-        test_case_id: testCase.test_case_id || "—",
-        test_scenario: testCase.test_scenario || testCase.task,
-        priority: testCase.priority,
-        status: testCase.status,
-      });
+    const storyReqs = requirements.filter((r) => r.user_story_id === story.id);
+    const reqList = storyReqs.length
+      ? storyReqs
+      : [null as null | (typeof requirements)[number]];
+
+    for (const requirement of reqList) {
+      const base = {
+        story_code: story.story_code,
+        story: story.story,
+        sprint_name: sprintName.get(story.sprint_id) ?? "—",
+        requirement_row_id: requirement?.id ?? null,
+        requirement_id: requirement?.requirement_id || story.story_code,
+        acceptance_criteria: requirement?.acceptance_criteria ?? story.acceptance_criteria,
+        priority: requirement?.priority ?? "—",
+      };
+      if (!storyCases.length) {
+        rows.push({
+          ...base,
+          id: requirement?.id ?? story.id,
+          story_id: story.id,
+          task_id: null,
+          test_case_id: "—",
+          test_scenario: null,
+          status: requirement?.status ?? story.status,
+        });
+        continue;
+      }
+      for (const testCase of storyCases) {
+        rows.push({
+          ...base,
+          id: `${requirement?.id ?? story.id}:${testCase.id}`,
+          story_id: story.id,
+          task_id: testCase.id,
+          test_case_id: testCase.test_case_id || "—",
+          test_scenario: testCase.test_scenario || testCase.task,
+          status: testCase.status,
+        });
+      }
     }
   }
 

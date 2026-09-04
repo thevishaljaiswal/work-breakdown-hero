@@ -12,6 +12,7 @@ import { DeleteButton } from "@/components/pm/DeleteButton";
 import {
   PRIORITY_OPTIONS,
   STATUS_OPTIONS,
+  deleteRequirement,
   deleteTestCase,
   deleteUserStory,
   fetchSprintBacklog,
@@ -20,19 +21,24 @@ import {
 } from "@/lib/pm";
 
 const storyFields: FieldSpec[] = [
-  { name: "requirement_id", label: "Requirement ID", type: "text", placeholder: "REQ-01", span: "half" },
   { name: "story_code", label: "User Story ID", type: "text", required: true, placeholder: "US-01", span: "half" },
   { name: "backlog_item", label: "Backlog Item (Feature / PBI)", type: "text", span: "half" },
   { name: "story", label: "User Story", type: "textarea", required: true, placeholder: "As a <role> I want <goal> so that <benefit>" },
-  { name: "acceptance_criteria", label: "Acceptance Criteria (story)", type: "textarea", placeholder: "One criterion per line" },
   { name: "assignee", label: "Assignee", type: "text", span: "half" },
   { name: "story_points", label: "Story Points", type: "number", span: "half" },
   { name: "status", label: "Status", type: "select", options: STATUS_OPTIONS, defaultValue: "not_started", span: "half" },
 ];
 
+const requirementFields: FieldSpec[] = [
+  { name: "requirement_id", label: "Requirement ID", type: "text", required: true, placeholder: "RQ-101", span: "half" },
+  { name: "priority", label: "Priority", type: "select", options: PRIORITY_OPTIONS, defaultValue: "medium", span: "half" },
+  { name: "description", label: "Requirement", type: "text", placeholder: "Vendor Code Unique" },
+  { name: "acceptance_criteria", label: "Acceptance Criteria", type: "textarea", placeholder: "One criterion per line" },
+  { name: "status", label: "Status", type: "select", options: STATUS_OPTIONS, defaultValue: "not_started", span: "half" },
+];
+
 const testCaseFields: FieldSpec[] = [
   { name: "test_case_id", label: "Test Case ID", type: "text", required: true, placeholder: "TC-01", span: "half" },
-  { name: "priority", label: "Priority", type: "select", options: PRIORITY_OPTIONS, defaultValue: "medium", span: "half" },
   { name: "task", label: "Test case title", type: "text", required: true },
   { name: "test_scenario", label: "Test Scenario", type: "textarea", placeholder: "Steps / scenario under test" },
   { name: "assignee", label: "Assignee (tester)", type: "text", span: "half" },
@@ -64,9 +70,7 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
         sprint_id: sprintId,
         story_code: values.story_code,
         story: values.story,
-        acceptance_criteria: values.acceptance_criteria || null,
         backlog_item: values.backlog_item || null,
-        requirement_id: values.requirement_id || null,
         assignee: values.assignee || null,
         story_points: values.story_points ? Number(values.story_points) : 0,
         status: (values.status || "not_started") as never,
@@ -87,7 +91,6 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
         task: values.task,
         test_case_id: values.test_case_id || null,
         test_scenario: values.test_scenario || null,
-        priority: (values.priority || "medium") as never,
         assignee: values.assignee || null,
         estimate_hours: values.estimate_hours ? Number(values.estimate_hours) : 0,
         acceptance_criteria: values.acceptance_criteria || null,
@@ -109,8 +112,6 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
         .update({
           story_code: values.story_code,
           story: values.story,
-          acceptance_criteria: values.acceptance_criteria || null,
-          requirement_id: values.requirement_id || null,
           backlog_item: values.backlog_item || null,
           assignee: values.assignee || null,
           story_points: values.story_points ? Number(values.story_points) : 0,
@@ -134,7 +135,6 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
           task: values.task,
           test_case_id: values.test_case_id || null,
           test_scenario: values.test_scenario || null,
-          priority: (values.priority || "medium") as never,
           assignee: values.assignee || null,
           estimate_hours: values.estimate_hours ? Number(values.estimate_hours) : 0,
           acceptance_criteria: values.acceptance_criteria || null,
@@ -163,6 +163,55 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
     mutationFn: (id: string) => deleteTestCase(id),
     onSuccess: () => {
       toast.success("Test case deleted");
+      refresh();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const addRequirement = useMutation({
+    mutationFn: async ({ storyId, values }: { storyId: string; values: Record<string, string> }) => {
+      const { error } = await supabase.from("story_requirements").insert({
+        user_story_id: storyId,
+        requirement_id: values.requirement_id,
+        description: values.description || null,
+        acceptance_criteria: values.acceptance_criteria || null,
+        priority: (values.priority || "medium") as never,
+        status: (values.status || "not_started") as never,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Requirement added");
+      refresh();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const updateRequirement = useMutation({
+    mutationFn: async ({ id, values }: { id: string; values: Record<string, string> }) => {
+      const { error } = await supabase
+        .from("story_requirements")
+        .update({
+          requirement_id: values.requirement_id,
+          description: values.description || null,
+          acceptance_criteria: values.acceptance_criteria || null,
+          priority: (values.priority || "medium") as never,
+          status: (values.status || "not_started") as never,
+        })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Requirement updated");
+      refresh();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const removeRequirement = useMutation({
+    mutationFn: (id: string) => deleteRequirement(id),
+    onSuccess: () => {
+      toast.success("Requirement deleted");
       refresh();
     },
     onError: (error: Error) => toast.error(error.message),
@@ -221,7 +270,9 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
                   </Button>
                   <span className="w-20 shrink-0 font-mono text-xs text-primary">{story.story_code}</span>
                   <span className="min-w-[200px] flex-1 truncate text-sm">{story.story}</span>
-                  <span className="text-xs text-muted-foreground">{story.tasks.length} test cases</span>
+                  <span className="text-xs text-muted-foreground">
+                    {story.requirements.length} reqs · {story.tasks.length} test cases
+                  </span>
                   <span className="text-xs text-muted-foreground">{story.story_points} pts</span>
                   <StatusBadge status={story.status} />
                   <div className="flex items-center gap-1">
@@ -238,6 +289,17 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
                       }
                     />
                     <RecordDialog
+                      title={`New requirement in ${story.story_code}`}
+                      fields={requirementFields}
+                      submitLabel="Add requirement"
+                      onSubmit={(values) => addRequirement.mutateAsync({ storyId: story.id, values })}
+                      trigger={
+                        <Button variant="ghost" size="sm">
+                          <Plus className="size-4" /> Requirement
+                        </Button>
+                      }
+                    />
+                    <RecordDialog
                       title={`New test case in ${story.story_code}`}
                       fields={testCaseFields}
                       submitLabel="Add test case"
@@ -250,7 +312,7 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
                     />
                     <DeleteButton
                       label={story.story_code}
-                      cascadeNote="its test cases"
+                      cascadeNote="its requirements and test cases"
                       onConfirm={() => removeStory.mutateAsync(story.id)}
                     />
                   </div>
@@ -259,11 +321,6 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
                 {expanded ? (
                   <div className="border-t border-border bg-surface-raised px-4 py-3">
                     <div className="flex flex-wrap gap-6 text-xs">
-                      {story.requirement_id ? (
-                        <span className="text-muted-foreground">
-                          Requirement: <span className="text-foreground">{story.requirement_id}</span>
-                        </span>
-                      ) : null}
                       {story.backlog_item ? (
                         <span className="text-muted-foreground">
                           Backlog item: <span className="text-foreground">{story.backlog_item}</span>
@@ -273,23 +330,63 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
                         Assignee: <span className="text-foreground">{story.assignee || "—"}</span>
                       </span>
                     </div>
-                    {story.acceptance_criteria ? (
-                      <div className="mt-2 text-xs">
-                        <span className="uppercase tracking-wide text-muted-foreground">
-                          Acceptance criteria
-                        </span>
-                        <p className="whitespace-pre-line text-sm text-muted-foreground">
-                          {story.acceptance_criteria}
-                        </p>
-                      </div>
-                    ) : null}
+
+                    <p className="mt-3 text-xs uppercase tracking-wide text-muted-foreground">
+                      Requirements ({story.requirements.length})
+                    </p>
+                    {story.requirements.length === 0 ? (
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        No requirements yet — add one with its requirement ID, acceptance criteria,
+                        priority and status.
+                      </p>
+                    ) : (
+                      <ul className="mt-1 divide-y divide-border/70 rounded-md border border-border/70 bg-card">
+                        {story.requirements.map((req) => (
+                          <li key={req.id} className="flex flex-wrap items-center gap-3 px-3 py-2">
+                            <span className="w-20 shrink-0 font-mono text-xs text-primary">
+                              {req.requirement_id}
+                            </span>
+                            <span className="min-w-[180px] flex-1 truncate text-sm">
+                              {req.description || "—"}
+                            </span>
+                            <span className="hidden min-w-[160px] flex-1 truncate text-xs text-muted-foreground sm:block">
+                              {req.acceptance_criteria || "—"}
+                            </span>
+                            <Badge variant="outline" className="text-[10px]">
+                              {priorityLabel(req.priority)}
+                            </Badge>
+                            <StatusBadge status={req.status} />
+                            <div className="flex items-center gap-1">
+                              <RecordDialog
+                                title={`Edit ${req.requirement_id}`}
+                                fields={requirementFields}
+                                submitLabel="Save changes"
+                                initialValues={req}
+                                onSubmit={(values) =>
+                                  updateRequirement.mutateAsync({ id: req.id, values })
+                                }
+                                trigger={
+                                  <Button variant="ghost" size="icon" aria-label="Edit requirement" className="size-8">
+                                    <Pencil className="size-4" />
+                                  </Button>
+                                }
+                              />
+                              <DeleteButton
+                                label={req.requirement_id}
+                                onConfirm={() => removeRequirement.mutateAsync(req.id)}
+                              />
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
 
                     <p className="mt-3 text-xs uppercase tracking-wide text-muted-foreground">
                       Test cases ({story.tasks.length})
                     </p>
                     {story.tasks.length === 0 ? (
                       <p className="mt-1 text-sm text-muted-foreground">
-                        No test cases yet — add one with its test case ID, scenario and priority.
+                        No test cases yet — add one with its test case ID and scenario.
                       </p>
                     ) : (
                       <ul className="mt-1 divide-y divide-border/70 rounded-md border border-border/70 bg-card">
@@ -302,9 +399,6 @@ export function SprintBacklog({ sprintId }: { sprintId: string }) {
                             <span className="hidden min-w-[160px] flex-1 truncate text-xs text-muted-foreground sm:block">
                               {task.test_scenario || "—"}
                             </span>
-                            <Badge variant="outline" className="text-[10px]">
-                              {priorityLabel(task.priority)}
-                            </Badge>
                             <StatusBadge status={task.status} />
                             <span className="text-xs text-muted-foreground">
                               {Number(task.estimate_hours)} h

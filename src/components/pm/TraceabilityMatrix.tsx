@@ -24,14 +24,14 @@ const ROW_FIELDS: FieldSpec[] = [
   { name: "story_code", label: "User Story ID", type: "text", placeholder: "US-101", span: "half" },
   { name: "story", label: "User Story", type: "textarea", required: true },
   { name: "acceptance_criteria", label: "Acceptance Criteria", type: "textarea" },
-  { name: "test_case_id", label: "Test Case ID", type: "text", placeholder: "TC-103", span: "half" },
   { name: "priority", label: "Priority", type: "select", options: PRIORITY_OPTIONS, span: "half" },
+  { name: "test_case_id", label: "Test Case ID", type: "text", placeholder: "TC-103", span: "half" },
   { name: "test_scenario", label: "Test Scenario", type: "textarea", placeholder: "Duplicate Vendor Validation" },
   { name: "status", label: "Status", type: "select", options: STATUS_OPTIONS, span: "half" },
 ];
 
 const STORY_ONLY_FIELDS = ROW_FIELDS.filter(
-  (f) => !["test_case_id", "priority", "test_scenario"].includes(f.name),
+  (f) => !["test_case_id", "test_scenario"].includes(f.name),
 );
 
 export function TraceabilityMatrix({ projectId }: { projectId: string }) {
@@ -46,14 +46,24 @@ export function TraceabilityMatrix({ projectId }: { projectId: string }) {
       const { error: storyError } = await supabase
         .from("user_stories")
         .update({
-          requirement_id: values.requirement_id || null,
           story_code: values.story_code || row.story_code,
           story: values.story,
-          acceptance_criteria: values.acceptance_criteria || null,
-          ...(row.task_id ? {} : { status: (values.status || "not_started") as never }),
         })
         .eq("id", row.story_id);
       if (storyError) throw storyError;
+
+      if (row.requirement_row_id) {
+        const { error: reqError } = await supabase
+          .from("story_requirements")
+          .update({
+            requirement_id: values.requirement_id || row.requirement_id,
+            acceptance_criteria: values.acceptance_criteria || null,
+            priority: (values.priority || "medium") as never,
+            ...(row.task_id ? {} : { status: (values.status || "not_started") as never }),
+          })
+          .eq("id", row.requirement_row_id);
+        if (reqError) throw reqError;
+      }
 
       if (row.task_id) {
         const { error: taskError } = await supabase
@@ -61,7 +71,6 @@ export function TraceabilityMatrix({ projectId }: { projectId: string }) {
           .update({
             test_case_id: values.test_case_id || null,
             test_scenario: values.test_scenario || null,
-            priority: (values.priority || "medium") as never,
             status: (values.status || "not_started") as never,
           })
           .eq("id", row.task_id);

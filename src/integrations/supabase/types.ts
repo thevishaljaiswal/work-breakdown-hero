@@ -353,6 +353,53 @@ export type Database = {
           },
         ]
       }
+      story_requirements: {
+        Row: {
+          acceptance_criteria: string | null
+          created_at: string
+          description: string | null
+          id: string
+          priority: Database["public"]["Enums"]["priority_level"]
+          requirement_id: string
+          sort_order: number
+          status: Database["public"]["Enums"]["work_status"]
+          updated_at: string
+          user_story_id: string
+        }
+        Insert: {
+          acceptance_criteria?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          priority?: Database["public"]["Enums"]["priority_level"]
+          requirement_id: string
+          sort_order?: number
+          status?: Database["public"]["Enums"]["work_status"]
+          updated_at?: string
+          user_story_id: string
+        }
+        Update: {
+          acceptance_criteria?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          priority?: Database["public"]["Enums"]["priority_level"]
+          requirement_id?: string
+          sort_order?: number
+          status?: Database["public"]["Enums"]["work_status"]
+          updated_at?: string
+          user_story_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_requirements_user_story_id_fkey"
+            columns: ["user_story_id"]
+            isOneToOne: false
+            referencedRelation: "user_stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       story_tasks: {
         Row: {
           acceptance_criteria: string | null
