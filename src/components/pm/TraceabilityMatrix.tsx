@@ -118,11 +118,9 @@ export function TraceabilityMatrix({ projectId }: { projectId: string }) {
       <table className="w-full min-w-[1100px] text-left text-sm">
         <thead>
           <tr className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
-            <th className="p-3 font-medium">Requirement ID</th>
             <th className="p-3 font-medium">User Story</th>
-            <th className="p-3 font-medium">Acceptance Criteria</th>
-            <th className="p-3 font-medium">Test Case ID</th>
-            <th className="p-3 font-medium">Test Scenario</th>
+            <th className="p-3 font-medium">Requirement</th>
+            <th className="p-3 font-medium">Test Case</th>
             <th className="p-3 font-medium">Priority</th>
             <th className="p-3 font-medium">Status</th>
             <th className="p-3 font-medium sr-only">Edit</th>
@@ -131,18 +129,22 @@ export function TraceabilityMatrix({ projectId }: { projectId: string }) {
         <tbody>
           {data.map((row) => (
             <tr key={row.id} className="border-b border-border/60 align-top last:border-0">
-              <td className="p-3 font-mono text-xs text-primary">{row.requirement_id}</td>
               <td className="p-3">
                 <span className="font-mono text-xs text-muted-foreground">{row.story_code}</span>
                 <p className="mt-0.5">{row.story}</p>
                 <p className="mt-0.5 text-xs text-muted-foreground">{row.sprint_name}</p>
               </td>
-              <td className="whitespace-pre-line p-3 text-muted-foreground">
-                {row.acceptance_criteria || "—"}
+              <td className="p-3">
+                <span className="font-mono text-xs text-primary">{row.requirement_id}</span>
+                <p className="mt-0.5 whitespace-pre-line text-muted-foreground">
+                  {row.acceptance_criteria || "—"}
+                </p>
               </td>
-              <td className="p-3 font-mono text-xs">{row.test_case_id}</td>
-              <td className="whitespace-pre-line p-3 text-muted-foreground">
-                {row.test_scenario || "—"}
+              <td className="p-3">
+                <span className="font-mono text-xs">{row.test_case_id}</span>
+                <p className="mt-0.5 whitespace-pre-line text-muted-foreground">
+                  {row.test_scenario || "—"}
+                </p>
               </td>
               <td className="p-3">
                 {row.priority === "—" ? (
@@ -156,6 +158,7 @@ export function TraceabilityMatrix({ projectId }: { projectId: string }) {
               <td className="p-3">
                 <StatusBadge status={row.status} />
               </td>
+
               <td className="p-3 text-right">
                 <div className="flex items-center justify-end gap-1">
                 <RecordDialog
