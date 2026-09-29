@@ -108,6 +108,7 @@ export type Database = {
           sprint_id: string
           status: Database["public"]["Enums"]["work_status"]
           technical_spec: string | null
+          timer_started_at: string | null
           transport_request: string | null
           updated_at: string
           user_story_id: string | null
@@ -133,6 +134,7 @@ export type Database = {
           sprint_id: string
           status?: Database["public"]["Enums"]["work_status"]
           technical_spec?: string | null
+          timer_started_at?: string | null
           transport_request?: string | null
           updated_at?: string
           user_story_id?: string | null
@@ -158,6 +160,7 @@ export type Database = {
           sprint_id?: string
           status?: Database["public"]["Enums"]["work_status"]
           technical_spec?: string | null
+          timer_started_at?: string | null
           transport_request?: string | null
           updated_at?: string
           user_story_id?: string | null
