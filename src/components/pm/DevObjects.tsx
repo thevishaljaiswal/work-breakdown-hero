@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/pm/StatusBadge";
 import { RecordDialog, type FieldSpec } from "@/components/pm/RecordDialog";
 import { DeleteButton } from "@/components/pm/DeleteButton";
+import { DevTimer } from "@/components/pm/DevTimer";
 import {
   COMPLEXITY_OPTIONS,
   DEV_OBJECT_TYPE_OPTIONS,
@@ -267,6 +268,7 @@ export function DevObjects({ projectId }: { projectId: string }) {
                             <p className="mt-0.5 font-medium">{priorityLabel(object.priority)}</p>
                           </div>
                           <StatusBadge status={object.status} />
+                          <DevTimer object={object} />
                           <div className="flex items-center gap-1">
                             <RecordDialog
                               title={`Edit ${object.object_code}`}
