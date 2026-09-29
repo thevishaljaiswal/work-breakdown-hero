@@ -1,0 +1,1 @@
+ALTER TABLE public.dev_objects ADD COLUMN IF NOT EXISTS timer_started_at timestamptz;

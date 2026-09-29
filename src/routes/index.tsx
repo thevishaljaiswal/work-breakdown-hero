@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/pm/StatusBadge";
 import { RecordDialog, type FieldSpec } from "@/components/pm/RecordDialog";
 import { DeleteButton } from "@/components/pm/DeleteButton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DevObjectsView, MilestonesView, UserStoriesView } from "@/components/pm/PortfolioViews";
 import {
   PRIORITY_OPTIONS,
   STATUS_OPTIONS,
@@ -155,6 +157,17 @@ function ProjectsPage() {
         />
       </header>
 
+      <Tabs defaultValue="projects" className="mt-6">
+        <TabsList>
+          <TabsTrigger value="projects">Projects</TabsTrigger>
+          <TabsTrigger value="milestones">Milestones</TabsTrigger>
+          <TabsTrigger value="stories">User stories</TabsTrigger>
+          <TabsTrigger value="dev">Development objects</TabsTrigger>
+        </TabsList>
+        <TabsContent value="milestones"><MilestonesView /></TabsContent>
+        <TabsContent value="stories"><UserStoriesView /></TabsContent>
+        <TabsContent value="dev"><DevObjectsView /></TabsContent>
+        <TabsContent value="projects">
       <div className="mt-6 flex flex-wrap items-center gap-2">
         <span className="text-xs uppercase tracking-wide text-muted-foreground">Filter by status</span>
         {[{ value: "all", label: "All" }, ...STATUS_OPTIONS].map((option) => {
@@ -246,6 +259,8 @@ function ProjectsPage() {
           </p>
         </div>
       )}
+        </TabsContent>
+      </Tabs>
     </main>
   );
 }
