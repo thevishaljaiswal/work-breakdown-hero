@@ -638,6 +638,63 @@ export type Database = {
           },
         ]
       }
+      weekly_tasks: {
+        Row: {
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          owner: string
+          priority: Database["public"]["Enums"]["priority_level"]
+          project_id: string | null
+          status: Database["public"]["Enums"]["work_status"]
+          title: string
+          updated_at: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          owner: string
+          priority?: Database["public"]["Enums"]["priority_level"]
+          project_id?: string | null
+          status?: Database["public"]["Enums"]["work_status"]
+          title: string
+          updated_at?: string
+          week_start: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          owner?: string
+          priority?: Database["public"]["Enums"]["priority_level"]
+          project_id?: string | null
+          status?: Database["public"]["Enums"]["work_status"]
+          title?: string
+          updated_at?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_rollup"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "weekly_tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       activity_rollup: {
