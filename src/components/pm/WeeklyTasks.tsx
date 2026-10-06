@@ -103,7 +103,7 @@ export function WeeklyTasks() {
   });
   const update = useMutation({
     mutationFn: async ({ id, values }: { id: string; values: Record<string, unknown> }) => {
-      const { error } = await supabase.from("weekly_tasks").update(values).eq("id", id);
+      const { error } = await supabase.from("weekly_tasks").update(values as never).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => done("Task updated"),
