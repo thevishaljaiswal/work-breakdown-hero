@@ -27,6 +27,7 @@ import { SprintBacklog } from "@/components/pm/SprintBacklog";
 import { TraceabilityMatrix } from "@/components/pm/TraceabilityMatrix";
 import { SuccessMetrics } from "@/components/pm/SuccessMetrics";
 import { DevObjects } from "@/components/pm/DevObjects";
+import { ProjectDocuments } from "@/components/pm/ProjectDocuments";
 import { DeleteButton } from "@/components/pm/DeleteButton";
 import {
   PRIORITY_OPTIONS,
