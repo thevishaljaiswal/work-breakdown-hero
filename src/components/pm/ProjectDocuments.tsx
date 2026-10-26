@@ -176,7 +176,13 @@ export function ProjectDocuments({ projectId }: { projectId: string }) {
         .update({ ...payload(values), doc_url: filePath })
         .eq("id", doc.id);
       if (error) throw error;
-      if (file && doc.doc_url) await deleteDocumentFile(doc.doc_url);
+      if (file && doc.doc_url) {
+        try {
+          await deleteDocumentFile(doc.doc_url);
+        } catch {
+          // Old file cleanup is best-effort; the record update already succeeded.
+        }
+      }
     },
     onSuccess: () => {
       toast.success("Document updated");
