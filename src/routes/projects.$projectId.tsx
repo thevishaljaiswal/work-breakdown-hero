@@ -12,6 +12,7 @@ import {
   Layers,
   Rocket,
   Code2,
+  FileText,
   Table2,
   Target,
 } from "lucide-react";
@@ -27,6 +28,7 @@ import { SprintBacklog } from "@/components/pm/SprintBacklog";
 import { TraceabilityMatrix } from "@/components/pm/TraceabilityMatrix";
 import { SuccessMetrics } from "@/components/pm/SuccessMetrics";
 import { DevObjects } from "@/components/pm/DevObjects";
+import { ProjectDocuments } from "@/components/pm/ProjectDocuments";
 import { DeleteButton } from "@/components/pm/DeleteButton";
 import {
   PRIORITY_OPTIONS,
@@ -525,6 +527,9 @@ function ProjectDetail() {
           <TabsTrigger value="metrics" className="gap-2">
             <Target className="size-4" /> Success metrics
           </TabsTrigger>
+          <TabsTrigger value="documents" className="gap-2">
+            <FileText className="size-4" /> Documents
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="wbs" className="mt-6">
@@ -889,6 +894,10 @@ function ProjectDetail() {
 
         <TabsContent value="metrics" className="mt-6">
           <SuccessMetrics projectId={projectId} />
+        </TabsContent>
+
+        <TabsContent value="documents" className="mt-6">
+          <ProjectDocuments projectId={projectId} />
         </TabsContent>
       </Tabs>
     </main>
