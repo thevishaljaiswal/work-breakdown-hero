@@ -224,9 +224,33 @@ export async function fetchProjectDocuments(projectId: string) {
   return data;
 }
 
-export async function deleteProjectDocument(id: string) {
+const DOCUMENT_BUCKET = "project-documents";
+
+export async function uploadDocumentFile(projectId: string, file: File) {
+  const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+  const path = `${projectId}/${crypto.randomUUID()}-${safeName}`;
+  const { error } = await supabase.storage.from(DOCUMENT_BUCKET).upload(path, file);
+  if (error) throw error;
+  return path;
+}
+
+export async function deleteDocumentFile(path: string) {
+  const { error } = await supabase.storage.from(DOCUMENT_BUCKET).remove([path]);
+  if (error) throw error;
+}
+
+export async function getDocumentUrl(path: string) {
+  const { data, error } = await supabase.storage
+    .from(DOCUMENT_BUCKET)
+    .createSignedUrl(path, 60 * 60);
+  if (error) throw error;
+  return data.signedUrl;
+}
+
+export async function deleteProjectDocument(id: string, filePath?: string | null) {
   const { error } = await supabase.from("project_documents").delete().eq("id", id);
   if (error) throw error;
+  if (filePath) await deleteDocumentFile(filePath);
 }
 
 export async function deleteProject(id: string) {
