@@ -132,6 +132,21 @@ export function RecordDialog({
                     ))}
                   </SelectContent>
                 </Select>
+              ) : field.type === "file" ? (
+                <Input
+                  id={field.name}
+                  type="file"
+                  required={field.required}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    setFiles((f) => {
+                      const next = { ...f };
+                      if (file) next[field.name] = file;
+                      else delete next[field.name];
+                      return next;
+                    });
+                  }}
+                />
               ) : (
                 <Input
                   id={field.name}
