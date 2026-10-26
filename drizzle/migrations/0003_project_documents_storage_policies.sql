@@ -1,0 +1,4 @@
+create policy "Public read project documents" on storage.objects for select to anon, authenticated using (bucket_id = 'project-documents');
+create policy "Public write project documents" on storage.objects for insert to anon, authenticated with check (bucket_id = 'project-documents');
+create policy "Public update project documents" on storage.objects for update to anon, authenticated using (bucket_id = 'project-documents') with check (bucket_id = 'project-documents');
+create policy "Public delete project documents" on storage.objects for delete to anon, authenticated using (bucket_id = 'project-documents');

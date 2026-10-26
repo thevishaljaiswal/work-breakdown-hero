@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ExternalLink, FileText, FolderOpen, Pencil, Plus } from "lucide-react";
+import { Eye, FileText, FolderOpen, Pencil, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +13,9 @@ import {
   STATUS_OPTIONS,
   deleteProjectDocument,
   fetchProjectDocuments,
+  deleteDocumentFile,
+  getDocumentUrl,
+  uploadDocumentFile,
   type ProjectDocument,
 } from "@/lib/pm";
 
@@ -42,17 +45,17 @@ const documentFields: FieldSpec[] = [
   { name: "owner", label: "Owner", type: "text", span: "half" },
   { name: "version", label: "Version", type: "text", defaultValue: "1.0", span: "half" },
   { name: "status", label: "Status", type: "select", options: STATUS_OPTIONS, defaultValue: "not_started", span: "half" },
-  { name: "doc_url", label: "Link / location", type: "text", placeholder: "https://…", span: "half" },
   { name: "remarks", label: "Remarks", type: "textarea" },
+  { name: "file", label: "File", type: "file" },
 ];
 
-function fieldsFor(subCategory?: string | null): FieldSpec[] {
+function fieldsFor(subCategory?: string | null, hasFile?: boolean): FieldSpec[] {
   const subs = DOCUMENT_CATEGORIES.flatMap((c) => c.subCategories).map((s) => ({ value: s, label: s }));
-  return documentFields.map((f) =>
-    f.name === "sub_category"
-      ? { ...f, options: subs, defaultValue: subCategory ?? f.defaultValue }
-      : f,
-  );
+  return documentFields.map((f) => {
+    if (f.name === "sub_category") return { ...f, options: subs, defaultValue: subCategory ?? f.defaultValue };
+    if (f.name === "file") return { ...f, required: !hasFile, label: hasFile ? "Replace file (optional)" : "File" };
+    return f;
+  });
 }
 
 function DocumentRow({
@@ -61,9 +64,19 @@ function DocumentRow({
   onDelete,
 }: {
   doc: ProjectDocument;
-  onEdit: (values: Record<string, string>) => Promise<void>;
+  onEdit: (values: Record<string, string>, files: Record<string, File>) => Promise<void>;
   onDelete: () => Promise<unknown>;
 }) {
+  async function openFile() {
+    if (!doc.doc_url) return;
+    try {
+      const url = await getDocumentUrl(doc.doc_url);
+      window.open(url, "_blank", "noreferrer");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not open file");
+    }
+  }
+
   return (
     <li className="flex flex-wrap items-center gap-4 px-4 py-3">
       <div className="min-w-[220px] flex-1">
@@ -74,20 +87,23 @@ function DocumentRow({
         </p>
       </div>
       {doc.doc_url ? (
-        <a
-          href={doc.doc_url}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+        <Button
+          variant="link"
+          size="sm"
+          className="h-auto gap-1 p-0 text-xs"
+          onClick={openFile}
+          aria-label={`View ${doc.title}`}
         >
-          <ExternalLink className="size-3" /> Open
-        </a>
-      ) : null}
+          <Eye className="size-3" /> View file
+        </Button>
+      ) : (
+        <span className="text-xs text-muted-foreground">No file</span>
+      )}
       <StatusBadge status={doc.status} />
       <div className="flex items-center gap-1">
         <RecordDialog
           title={`Edit ${doc.title}`}
-          fields={fieldsFor(doc.sub_category)}
+          fields={fieldsFor(doc.sub_category, Boolean(doc.doc_url))}
           submitLabel="Save changes"
           initialValues={doc}
           onSubmit={onEdit}
@@ -120,16 +136,26 @@ export function ProjectDocuments({ projectId }: { projectId: string }) {
     owner: values.owner || null,
     version: values.version || "1.0",
     status: (values.status || "not_started") as never,
-    doc_url: values.doc_url || null,
     remarks: values.remarks || null,
   });
 
   const addDocument = useMutation({
-    mutationFn: async (values: Record<string, string>) => {
-      const { error } = await supabase
+    mutationFn: async ({ values, files }: { values: Record<string, string>; files: Record<string, File> }) => {
+      const { data, error } = await supabase
         .from("project_documents")
-        .insert({ project_id: projectId, ...payload(values) });
+        .insert({ project_id: projectId, ...payload(values) })
+        .select("id")
+        .single();
       if (error) throw error;
+      const file = files.file;
+      if (file) {
+        const path = await uploadDocumentFile(projectId, file);
+        const { error: updateError } = await supabase
+          .from("project_documents")
+          .update({ doc_url: path })
+          .eq("id", data.id);
+        if (updateError) throw updateError;
+      }
     },
     onSuccess: () => {
       toast.success("Document added");
@@ -139,9 +165,24 @@ export function ProjectDocuments({ projectId }: { projectId: string }) {
   });
 
   const updateDocument = useMutation({
-    mutationFn: async ({ id, values }: { id: string; values: Record<string, string> }) => {
-      const { error } = await supabase.from("project_documents").update(payload(values)).eq("id", id);
+    mutationFn: async ({ doc, values, files }: { doc: ProjectDocument; values: Record<string, string>; files: Record<string, File> }) => {
+      let filePath = doc.doc_url;
+      const file = files.file;
+      if (file) {
+        filePath = await uploadDocumentFile(projectId, file);
+      }
+      const { error } = await supabase
+        .from("project_documents")
+        .update({ ...payload(values), doc_url: filePath })
+        .eq("id", doc.id);
       if (error) throw error;
+      if (file && doc.doc_url) {
+        try {
+          await deleteDocumentFile(doc.doc_url);
+        } catch {
+          // Old file cleanup is best-effort; the record update already succeeded.
+        }
+      }
     },
     onSuccess: () => {
       toast.success("Document updated");
@@ -151,7 +192,7 @@ export function ProjectDocuments({ projectId }: { projectId: string }) {
   });
 
   const removeDocument = useMutation({
-    mutationFn: (id: string) => deleteProjectDocument(id),
+    mutationFn: (doc: ProjectDocument) => deleteProjectDocument(doc.id, doc.doc_url),
     onSuccess: () => {
       toast.success("Document deleted");
       refresh();
@@ -201,7 +242,7 @@ export function ProjectDocuments({ projectId }: { projectId: string }) {
             description="Register a project document under its category and sub category."
             fields={fieldsFor()}
             submitLabel="Add document"
-            onSubmit={(values) => addDocument.mutateAsync(values)}
+            onSubmit={(values, files) => addDocument.mutateAsync({ values, files })}
             trigger={
               <Button>
                 <Plus className="size-4" /> Add document
@@ -245,8 +286,8 @@ export function ProjectDocuments({ projectId }: { projectId: string }) {
                             <DocumentRow
                               key={doc.id}
                               doc={doc}
-                              onEdit={(values) => updateDocument.mutateAsync({ id: doc.id, values })}
-                              onDelete={() => removeDocument.mutateAsync(doc.id)}
+                              onEdit={(values, files) => updateDocument.mutateAsync({ doc, values, files })}
+                              onDelete={() => removeDocument.mutateAsync(doc)}
                             />
                           ))}
                         </ul>
