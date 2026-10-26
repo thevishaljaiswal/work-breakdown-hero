@@ -92,6 +92,7 @@ export function RecordDialog({
       onOpenChange={(next) => {
         setOpen(next);
         setValues(initial(fields, initialValues));
+        setFiles({});
       }}
     >
       <DialogTrigger asChild>{trigger}</DialogTrigger>
