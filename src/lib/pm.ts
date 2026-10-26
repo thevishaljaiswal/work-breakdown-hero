@@ -250,7 +250,13 @@ export async function getDocumentUrl(path: string) {
 export async function deleteProjectDocument(id: string, filePath?: string | null) {
   const { error } = await supabase.from("project_documents").delete().eq("id", id);
   if (error) throw error;
-  if (filePath) await deleteDocumentFile(filePath);
+  if (filePath) {
+    try {
+      await deleteDocumentFile(filePath);
+    } catch {
+      // Orphaned file cleanup is best-effort.
+    }
+  }
 }
 
 export async function deleteProject(id: string) {
