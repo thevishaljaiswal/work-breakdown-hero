@@ -23,7 +23,7 @@ import {
 export type FieldSpec = {
   name: string;
   label: string;
-  type: "text" | "textarea" | "date" | "number" | "select" | "checkbox";
+  type: "text" | "textarea" | "date" | "number" | "select" | "checkbox" | "file";
   options?: { value: string; label: string }[];
   required?: boolean;
   placeholder?: string;
@@ -41,7 +41,7 @@ type Props = {
   submitLabel?: string;
   /** When provided, the form opens pre-filled — use for editing an existing record. */
   initialValues?: Record<string, RecordValue>;
-  onSubmit: (values: Record<string, string>) => Promise<void>;
+  onSubmit: (values: Record<string, string>, files: Record<string, File>) => Promise<void>;
 };
 
 function toText(value: RecordValue) {
@@ -62,6 +62,7 @@ export function RecordDialog({
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [values, setValues] = useState<Record<string, string>>(() => initial(fields, initialValues));
+  const [files, setFiles] = useState<Record<string, File>>({});
 
   function initial(specs: FieldSpec[], preset?: Record<string, RecordValue>) {
     return Object.fromEntries(
@@ -76,8 +77,9 @@ export function RecordDialog({
     event.preventDefault();
     setSaving(true);
     try {
-      await onSubmit(values);
+      await onSubmit(values, files);
       setValues(initial(fields, initialValues));
+      setFiles({});
       setOpen(false);
     } finally {
       setSaving(false);
