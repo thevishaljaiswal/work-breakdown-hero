@@ -136,16 +136,26 @@ export function ProjectDocuments({ projectId }: { projectId: string }) {
     owner: values.owner || null,
     version: values.version || "1.0",
     status: (values.status || "not_started") as never,
-    doc_url: values.doc_url || null,
     remarks: values.remarks || null,
   });
 
   const addDocument = useMutation({
-    mutationFn: async (values: Record<string, string>) => {
-      const { error } = await supabase
+    mutationFn: async ({ values, files }: { values: Record<string, string>; files: Record<string, File> }) => {
+      const { data, error } = await supabase
         .from("project_documents")
-        .insert({ project_id: projectId, ...payload(values) });
+        .insert({ project_id: projectId, ...payload(values) })
+        .select("id")
+        .single();
       if (error) throw error;
+      const file = files.file;
+      if (file) {
+        const path = await uploadDocumentFile(projectId, file);
+        const { error: updateError } = await supabase
+          .from("project_documents")
+          .update({ doc_url: path })
+          .eq("id", data.id);
+        if (updateError) throw updateError;
+      }
     },
     onSuccess: () => {
       toast.success("Document added");
@@ -155,9 +165,18 @@ export function ProjectDocuments({ projectId }: { projectId: string }) {
   });
 
   const updateDocument = useMutation({
-    mutationFn: async ({ id, values }: { id: string; values: Record<string, string> }) => {
-      const { error } = await supabase.from("project_documents").update(payload(values)).eq("id", id);
+    mutationFn: async ({ doc, values, files }: { doc: ProjectDocument; values: Record<string, string>; files: Record<string, File> }) => {
+      let filePath = doc.doc_url;
+      const file = files.file;
+      if (file) {
+        filePath = await uploadDocumentFile(projectId, file);
+      }
+      const { error } = await supabase
+        .from("project_documents")
+        .update({ ...payload(values), doc_url: filePath })
+        .eq("id", doc.id);
       if (error) throw error;
+      if (file && doc.doc_url) await deleteDocumentFile(doc.doc_url);
     },
     onSuccess: () => {
       toast.success("Document updated");
@@ -167,7 +186,7 @@ export function ProjectDocuments({ projectId }: { projectId: string }) {
   });
 
   const removeDocument = useMutation({
-    mutationFn: (id: string) => deleteProjectDocument(id),
+    mutationFn: (doc: ProjectDocument) => deleteProjectDocument(doc.id, doc.doc_url),
     onSuccess: () => {
       toast.success("Document deleted");
       refresh();
@@ -217,7 +236,7 @@ export function ProjectDocuments({ projectId }: { projectId: string }) {
             description="Register a project document under its category and sub category."
             fields={fieldsFor()}
             submitLabel="Add document"
-            onSubmit={(values) => addDocument.mutateAsync(values)}
+            onSubmit={(values, files) => addDocument.mutateAsync({ values, files })}
             trigger={
               <Button>
                 <Plus className="size-4" /> Add document
@@ -261,8 +280,8 @@ export function ProjectDocuments({ projectId }: { projectId: string }) {
                             <DocumentRow
                               key={doc.id}
                               doc={doc}
-                              onEdit={(values) => updateDocument.mutateAsync({ id: doc.id, values })}
-                              onDelete={() => removeDocument.mutateAsync(doc.id)}
+                              onEdit={(values, files) => updateDocument.mutateAsync({ doc, values, files })}
+                              onDelete={() => removeDocument.mutateAsync(doc)}
                             />
                           ))}
                         </ul>
