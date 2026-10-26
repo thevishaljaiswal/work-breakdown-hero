@@ -12,6 +12,17 @@ export type StoryRequirement = Tables<"story_requirements">;
 export type UserStoryNode = UserStory & { tasks: StoryTask[]; requirements: StoryRequirement[] };
 export type SuccessMetric = Tables<"success_metrics">;
 export type DevObject = Tables<"dev_objects">;
+export type ProjectDocument = Tables<"project_documents">;
+
+export const DOCUMENT_CATEGORIES: { category: string; subCategories: string[] }[] = [
+  { category: "Project Initiation", subCategories: ["Approval"] },
+  { category: "Requirements", subCategories: ["Business Requirements", "Process Design"] },
+  { category: "Solution Design", subCategories: ["Technical Design", "Architecture / Integration"] },
+  { category: "Development", subCategories: ["Build Reference"] },
+  { category: "Testing", subCategories: ["Test Documentation", "Business Acceptance"] },
+  { category: "Deployment", subCategories: ["Release Management"] },
+  { category: "Handover & Closure", subCategories: ["Support Documentation"] },
+];
 
 export const DEV_OBJECT_TYPE_OPTIONS = [
   { value: "report", label: "Report" },
@@ -199,6 +210,22 @@ export async function deleteDevObject(id: string) {
 
 export async function deleteSuccessMetric(id: string) {
   const { error } = await supabase.from("success_metrics").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function fetchProjectDocuments(projectId: string) {
+  const { data, error } = await supabase
+    .from("project_documents")
+    .select("*")
+    .eq("project_id", projectId)
+    .order("sort_order")
+    .order("created_at");
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteProjectDocument(id: string) {
+  const { error } = await supabase.from("project_documents").delete().eq("id", id);
   if (error) throw error;
 }
 
