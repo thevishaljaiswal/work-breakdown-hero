@@ -242,6 +242,69 @@ export type Database = {
           },
         ]
       }
+      project_documents: {
+        Row: {
+          category: string
+          created_at: string
+          doc_url: string | null
+          id: string
+          owner: string | null
+          project_id: string
+          remarks: string | null
+          sort_order: number
+          status: Database["public"]["Enums"]["work_status"]
+          sub_category: string
+          title: string
+          updated_at: string
+          version: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          doc_url?: string | null
+          id?: string
+          owner?: string | null
+          project_id: string
+          remarks?: string | null
+          sort_order?: number
+          status?: Database["public"]["Enums"]["work_status"]
+          sub_category: string
+          title: string
+          updated_at?: string
+          version?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          doc_url?: string | null
+          id?: string
+          owner?: string | null
+          project_id?: string
+          remarks?: string | null
+          sort_order?: number
+          status?: Database["public"]["Enums"]["work_status"]
+          sub_category?: string
+          title?: string
+          updated_at?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_documents_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_rollup"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "project_documents_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           budget: number
